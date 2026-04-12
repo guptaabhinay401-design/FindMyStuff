@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Lost Item | FindMyStuff</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-slate-100 px-3 py-4 sm:px-6 sm:py-7">
+
+<main class="mx-auto w-full max-w-4xl">
+  <section class="overflow-hidden rounded-2xl bg-white shadow-xl">
+
+    <header class="flex flex-wrap items-center gap-3 bg-gradient-to-r from-blue-700 to-blue-600 p-4 text-white">
+      <a href="index.html" class="inline-flex items-center gap-1 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/20">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
+        <span>Back</span>
+      </a>
+      <h1 class="text-lg font-semibold sm:text-xl">
+        <i class="fa-solid fa-magnifying-glass mr-2"></i>
+        Report Lost Item
+      </h1>
+    </header>
+
+    <form id="lostReportForm" class="space-y-6 p-4 sm:p-7">
+
+      <div id="formStatus" class="hidden rounded-lg border px-4 py-3 text-sm font-medium" role="status" aria-live="polite"></div>
+
+      <section>
+        <h2 class="mb-4 text-lg font-bold text-blue-900">Item Details</h2>
+
+        <div class="mb-4">
+          <label for="itemName" class="mb-1 block text-sm font-medium">Item Title *</label>
+          <input id="itemName" name="itemName" type="text" required
+          class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g. Black Leather Wallet">
+        </div>
+
+        <div class="mb-4">
+          <label for="category" class="mb-1 block text-sm font-medium">Category *</label>
+          <select id="category" name="category" required
+          class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Category</option>
+            <option>Wallet</option>
+            <option>Mobile Phone</option>
+            <option>Keys</option>
+            <option>ID Card</option>
+            <option>Bag</option>
+            <option>Electronics</option>
+            <option>Watch</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="description" class="mb-1 block text-sm font-medium">Item Description *</label>
+          <textarea id="description" name="description" rows="4" required
+          class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Describe color, brand, unique marks..."></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label for="image" class="mb-1 block text-sm font-medium">Upload Image *</label>
+          <input id="image" name="image" type="file" accept="image/*" required
+          class="w-full rounded-lg border bg-slate-50 px-4 py-2.5 text-sm">
+        </div>
+      </section>
+
+      <section>
+        <h2 class="mb-4 text-lg font-bold text-blue-900">Loss Details</h2>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="dateLost" class="mb-1 block text-sm font-medium">Date Lost *</label>
+            <input id="dateLost" name="dateLost" type="date" required
+            class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label for="timeLost" class="mb-1 block text-sm font-medium">Time Lost</label>
+            <input id="timeLost" name="timeLost" type="time"
+            class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label for="location" class="mb-1 block text-sm font-medium">Location Lost *</label>
+          <select id="location" name="location" required
+          class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Location</option>
+            <option>Library</option>
+            <option>Cafeteria</option>
+            <option>Hostel</option>
+            <option>Parking Area</option>
+            <option>Classroom</option>
+            <option>Auditorium</option>
+            <option value="Other">Other</option>
+          </select>
+          <input id="customLocation" name="customLocation" type="text"
+          class="mt-2 hidden w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter custom location">
+        </div>
+      </section>
+
+      <section>
+        <h2 class="mb-4 text-lg font-bold text-blue-900">Your Details</h2>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="reporterName" class="mb-1 block text-sm font-medium">Full Name *</label>
+            <input id="reporterName" name="reporterName" type="text" required
+            class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label for="phone" class="mb-1 block text-sm font-medium">Phone Number *</label>
+            <input id="phone" name="phone" type="tel" required
+            class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label for="email" class="mb-1 block text-sm font-medium">Email *</label>
+          <input id="email" name="email" type="email" required
+          class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <label class="mt-4 flex items-center gap-2 text-sm text-gray-600">
+          <input id="contactPublic" name="contactPublic" type="checkbox" class="h-4 w-4 accent-blue-600">
+          Show my contact publicly (optional)
+        </label>
+      </section>
+
+      <button id="submitBtn" type="submit"
+      class="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+        Submit Report
+      </button>
+    </form>
+  </section>
+</main>
+
+<script src="js/auth-client.js"></script>
+<script src="js/image-utils.js"></script>
+<script src="js/data-store.js"></script>
+<script>
+const form = document.getElementById("lostReportForm");
+const locationField = document.getElementById("location");
+const customLocation = document.getElementById("customLocation");
+const statusBox = document.getElementById("formStatus");
+const submitBtn = document.getElementById("submitBtn");
+const dateLostInput = document.getElementById("dateLost");
+
+dateLostInput.value = new Date().toISOString().slice(0, 10);
+
+function showStatus(message, type) {
+  statusBox.textContent = message;
+  statusBox.className = "rounded-lg border px-4 py-3 text-sm font-medium";
+  if (type === "success") {
+    statusBox.classList.add("border-green-200", "bg-green-50", "text-green-700");
+  } else if (type === "error") {
+    statusBox.classList.add("border-red-200", "bg-red-50", "text-red-700");
+  } else {
+    statusBox.classList.add("border-blue-200", "bg-blue-50", "text-blue-700");
+  }
+}
+
+function applyUserToForm(user) {
+  if (!user) {
+    return;
+  }
+
+  if (user.name) {
+    form.reporterName.value = user.name;
+  }
+
+  if (user.mobile) {
+    form.phone.value = user.mobile;
+  }
+
+  if (user.email) {
+    form.email.value = user.email;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async function () {
+  const user = await window.LFAuth.bootstrapUserFromToken();
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  applyUserToForm(user);
+});
+
+locationField.addEventListener("change", function () {
+  const isOther = locationField.value === "Other";
+  customLocation.classList.toggle("hidden", !isOther);
+  customLocation.required = isOther;
+  if (!isOther) {
+    customLocation.value = "";
+  }
+});
+
+form.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+  showStatus("Saving your report...", "info");
+
+  const selectedLocation = locationField.value === "Other"
+    ? customLocation.value.trim()
+    : locationField.value;
+  const imageFile = form.image.files && form.image.files[0];
+  let imageData = "";
+  let imageThumbData = "";
+
+  try {
+    if (imageFile) {
+      showStatus("Optimizing image before upload...", "info");
+      const optimizedImages = await window.LFImageUtils.createImageVariantSet(
+        imageFile,
+        {
+          maxWidth: 1280,
+          maxHeight: 1280,
+          quality: 0.82,
+          minCompressSizeBytes: 180 * 1024
+        },
+        {
+          maxWidth: 420,
+          maxHeight: 420,
+          quality: 0.72,
+          minCompressSizeBytes: 0
+        }
+      );
+      imageData = optimizedImages.image;
+      imageThumbData = optimizedImages.imageThumb;
+    }
+  } catch (error) {
+    showStatus("Image read nahi ho payi. Dobara select karo.", "error");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit Report";
+    return;
+  }
+
+  const payload = {
+    itemName: form.itemName.value.trim(),
+    category: form.category.value.trim(),
+    description: form.description.value.trim(),
+    dateLost: form.dateLost.value,
+    timeLost: form.timeLost.value,
+    location: selectedLocation,
+    reporterName: form.reporterName.value.trim(),
+    phone: form.phone.value.trim(),
+    email: form.email.value.trim(),
+    contactPublic: form.contactPublic.checked,
+    image: imageData,
+    imageThumb: imageThumbData
+  };
+
+  try {
+    await window.LFStore.createLostItem(payload);
+    form.reset();
+    locationField.dispatchEvent(new Event("change"));
+    dateLostInput.value = new Date().toISOString().slice(0, 10);
+    showStatus("Lost item report submitted successfully.", "success");
+  } catch (error) {
+    console.error("Failed to submit lost item report:", error);
+    showStatus(error.message || "Could not submit report. Please try again.", "error");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit Report";
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FindMyStuff helps you report and search lost items in real time.">
+  <title>FindMyStuff | Home</title>
+  <style>
+    :root {
+      --bg: #e8edf3;
+      --surface: #ffffff;
+      --ink: #10243a;
+      --muted: #52657a;
+      --line: #d7e1ec;
+      --brand: #0b4f8a;
+      --brand-strong: #083a65;
+      --success: #0e8f62;
+      --success-strong: #0c6d4b;
+      --shadow: 0 18px 40px rgba(9, 27, 45, 0.16);
+      --radius-lg: 28px;
+      --radius-md: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: linear-gradient(165deg, #dce3ec, #edf2f7 50%, #e3eaf3);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .container {
+      width: min(1260px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      border-bottom: 1px solid var(--line);
+      background: rgba(242, 246, 251, 0.96);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-wrap {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      position: relative;
+    }
+
+    .brand {
+      text-decoration: none;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.95rem;
+      font-weight: 700;
+      color: #133b67;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+
+    .nav-toggle {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 1rem;
+      padding: 0.45rem 0.72rem;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      width: min(290px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 0.2rem;
+    }
+
+    .nav-links.open {
+      display: flex;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #162d45;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 10px;
+      padding: 0.72rem 0.85rem;
+      transition: background-color 0.16s ease, color 0.16s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      background: #ebf3fb;
+      color: var(--brand);
+      outline: none;
+    }
+
+    .nav-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 2px solid #cddceb;
+      background: linear-gradient(155deg, #ffffff, #edf4fb);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+      margin-left: auto;
+      box-shadow: 0 6px 14px rgba(8, 27, 45, 0.14);
+    }
+
+    .nav-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .avatar-fallback {
+      width: 100%;
+      height: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #355a7c;
+    }
+
+    .avatar-fallback svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    .hero {
+      padding: 2.5rem 0 1.3rem;
+    }
+
+    .hero-card {
+      min-height: min(76vh, 700px);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 1.8rem;
+      background:
+        linear-gradient(rgba(7, 24, 40, 0.56), rgba(7, 24, 40, 0.56)),
+        url("https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1920&q=80")
+        center/cover no-repeat;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .hero-content {
+      width: min(930px, 100%);
+      color: #f7fbff;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.2rem, 5.2vw, 5rem);
+      line-height: 1.08;
+      text-shadow: 0 5px 22px rgba(0, 0, 0, 0.36);
+    }
+
+    .hero p {
+      margin: 1rem auto 1.75rem;
+      font-size: clamp(1rem, 1.85vw, 2rem);
+      color: #e4edf8;
+      max-width: 880px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      margin-bottom: 1.3rem;
+    }
+
+    .btn {
+      border: 0;
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 12px;
+      min-height: 46px;
+      padding: 0.82rem 1.35rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.06rem;
+      transition: transform 0.16s ease, filter 0.16s ease, background-color 0.16s ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #f8fbff;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      background: var(--brand-strong);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #f8fbff;
+    }
+
+    .btn-success:hover,
+    .btn-success:focus-visible {
+      background: var(--success-strong);
+    }
+
+    .btn-ghost {
+      background: #edf3fb;
+      border: 1px solid #ccdaea;
+      color: #26496b;
+    }
+
+    .search-form {
+      width: min(960px, 100%);
+      margin-inline: auto;
+      background: #f3f6fa;
+      border: 2px solid #d4dfea;
+      border-radius: 16px;
+      padding: 0.56rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+      box-shadow: 0 10px 24px rgba(11, 26, 44, 0.2);
+    }
+
+    .search-form input {
+      width: 100%;
+      border: 1px solid #c8d6e5;
+      border-radius: 11px;
+      padding: 0.92rem 1rem;
+      min-height: 46px;
+      font: inherit;
+      font-size: 1.08rem;
+      color: #18304a;
+      background: #ffffff;
+    }
+
+    .search-form input:focus-visible {
+      outline: 2px solid rgba(11, 79, 138, 0.36);
+      outline-offset: 1px;
+      border-color: #8eb2d4;
+    }
+
+    .recent {
+      padding: 2rem 0 2.8rem;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.45rem, 3.2vw, 2rem);
+      color: #173f6d;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: #53677d;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+
+    .item-card {
+      background: var(--surface);
+      border: 1px solid #deebf7;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(7, 24, 40, 0.08);
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+    }
+
+    .item-preview {
+      height: 130px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(140deg, #edf4fb, #dbeaf8);
+    }
+
+    .item-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .item-fallback {
+      color: #4d6882;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .item-body {
+      padding: 0.82rem;
+      display: grid;
+      gap: 0.32rem;
+    }
+
+    .item-body h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.3;
+      color: #142c44;
+    }
+
+    .item-meta {
+      margin: 0;
+      color: #566f87;
+      font-size: 0.88rem;
+    }
+
+    .item-description {
+      margin: 0.25rem 0 0;
+      color: #4f667c;
+      font-size: 0.88rem;
+      line-height: 1.36;
+    }
+
+    .state-card {
+      grid-column: 1 / -1;
+      border-radius: 14px;
+      border: 1px dashed #c6d7e8;
+      background: #ffffff;
+      color: #557089;
+      text-align: center;
+      padding: 1rem;
+      font-weight: 600;
+    }
+
+    .error-card {
+      border: 1px solid #f2c8c8;
+      background: #fff4f4;
+      color: #8a2b2b;
+    }
+
+    footer {
+      text-align: center;
+      color: #5c7289;
+      font-size: 0.92rem;
+      padding: 0.5rem 1rem 1.7rem;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(6, 18, 32, 0.55);
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(420px, 100%);
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e3edf8;
+      box-shadow: 0 22px 48px rgba(8, 26, 44, 0.28);
+      padding: 1.1rem 1rem 1rem;
+      position: relative;
+    }
+
+    .modal-card h3 {
+      margin: 0 0 0.35rem;
+      color: #173f6d;
+      font-size: 1.34rem;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .modal-card p {
+      margin: 0 0 1rem;
+      color: #536c83;
+      font-size: 0.95rem;
+    }
+
+    .modal-actions {
+      display: grid;
+      gap: 0.56rem;
+      grid-template-columns: 1fr;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 0.55rem;
+      right: 0.55rem;
+      border: 1px solid #d4e0ec;
+      background: #f4f8fc;
+      color: #204566;
+      font-weight: 700;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .modal-close:hover,
+    .modal-close:focus-visible {
+      background: #e9f1f9;
+      outline: none;
+    }
+
+    @media (min-width: 680px) {
+      .search-form {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+
+      .search-form .btn {
+        min-width: 140px;
+      }
+
+      .grid-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 920px) {
+      .nav-toggle {
+        display: none;
+      }
+
+      .nav-links {
+        position: static;
+        display: flex;
+        width: auto;
+        box-shadow: none;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.55rem;
+      }
+
+      .nav-links a {
+        padding: 0.48rem 0.82rem;
+      }
+
+      .nav-avatar {
+        margin-left: 0.25rem;
+      }
+
+      .grid-cards {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="index.html">FindMyStuff</a>
+
+      <button
+        class="nav-toggle"
+        id="navToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="primaryNav"
+        aria-label="Open navigation menu">
+        Menu
+      </button>
+
+      <nav id="primaryNav" class="nav-links" aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="search.html?mode=search&type=lost&live=1">All Lost Items</a>
+        <a id="navLogin" href="login.html">Login</a>
+        <a id="navSignup" href="signup.html">Sign Up</a>
+        <a id="navProfile" class="nav-avatar" href="profile.html" aria-label="Open profile">
+          <img id="navProfileImage" class="hidden" alt="Profile photo">
+          <span id="navProfileFallback" class="avatar-fallback" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20c0-3.4 3.6-6.2 8-6.2s8 2.8 8 6.2"></path>
+            </svg>
+          </span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-card">
+          <div class="hero-content">
+            <h1>Lost Something? Found Something?</h1>
+            <p>Search lost or found items quickly or report a new item in under one minute.</p>
+
+            <div class="actions">
+              <a href="report-lost.html" class="btn btn-primary">Report Lost Item</a>
+              <a href="report-found.html" class="btn btn-success">Report Found Item</a>
+            </div>
+
+            <form id="heroSearchForm" class="search-form" aria-label="Search items">
+              <input
+                id="heroSearchInput"
+                type="search"
+                name="keyword"
+                placeholder="Search lost or found items..."
+                autocomplete="off">
+              <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="recent">
+      <div class="container">
+        <div class="section-head">
+          <h2>Recent Lost Items</h2>
+          <p>Live updates every 30 seconds</p>
+        </div>
+        <div id="recentItems" class="grid-cards" aria-live="polite">
+          <div class="state-card">Loading recent lost items...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>(c) 2026 FindMyStuff</footer>
+
+  <div id="signupModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="signupModalTitle">
+      <button id="closeSignupModal" class="modal-close" type="button" aria-label="Close sign up popup">x</button>
+      <h3 id="signupModalTitle">Welcome to FindMyStuff</h3>
+      <p>Create your account to report items faster and track your activity.</p>
+      <div class="modal-actions">
+        <a href="signup.html" class="btn btn-primary">Sign Up</a>
+        <a href="login.html" class="btn btn-ghost">Login</a>
+        <button id="continueGuestBtn" class="btn btn-ghost" type="button">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth-client.js"></script>
+  <script src="js/data-store.js"></script>
+  <script>
+    (function () {
+      var navToggle = document.getElementById("navToggle");
+      var primaryNav = document.getElementById("primaryNav");
+      var navLogin = document.getElementById("navLogin");
+      var navSignup = document.getElementById("navSignup");
+      var navProfileImage = document.getElementById("navProfileImage");
+      var navProfileFallback = document.getElementById("navProfileFallback");
+      var signupModal = document.getElementById("signupModal");
+      var closeSignupModal = document.getElementById("closeSignupModal");
+      var continueGuestBtn = document.getElementById("continueGuestBtn");
+      var heroSearchForm = document.getElementById("heroSearchForm");
+      var heroSearchInput = document.getElementById("heroSearchInput");
+      var recentItemsContainer = document.getElementById("recentItems");
+
+      function setNavOpen(isOpen) {
+        if (!navToggle || !primaryNav) {
+          return;
+        }
+
+        navToggle.setAttribute("aria-expanded", String(isOpen));
+        primaryNav.classList.toggle("open", isOpen);
+      }
+
+      function isLoggedIn() {
+        return Boolean(localStorage.getItem("lf_auth_token"));
+      }
+
+      function getStoredUser() {
+        var raw = localStorage.getItem("lf_auth_user");
+        if (!raw) {
+          return {};
+        }
+
+        try {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            return parsed;
+          }
+        } catch (error) {
+          return {};
+        }
+
+        return {};
+      }
+
+      function getProfilePhoto() {
+        var directKeys = ["lf_profile_photo", "lf_profile_image", "lf_user_dp", "lf_user_avatar"];
+
+        for (var i = 0; i < directKeys.length; i += 1) {
+          var fromDirect = localStorage.getItem(directKeys[i]);
+          if (fromDirect && String(fromDirect).trim()) {
+            return String(fromDirect).trim();
+          }
+        }
+
+        var user = getStoredUser();
+        var candidates = [
+          user.profileImage,
+          user.image,
+          user.photo,
+          user.avatar,
+          user.dp
+        ];
+
+        for (var j = 0; j < candidates.length; j += 1) {
+          var value = candidates[j];
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+        }
+
+        return "";
+      }
+
+      function applyProfileAvatar() {
+        var photo = getProfilePhoto();
+
+        if (!photo) {
+          navProfileImage.removeAttribute("src");
+          navProfileImage.classList.add("hidden");
+          navProfileFallback.classList.remove("hidden");
+          return;
+        }
+
+        navProfileImage.src = photo;
+        navProfileImage.classList.remove("hidden");
+        navProfileFallback.classList.add("hidden");
+
+        navProfileImage.addEventListener("error", function () {
+          navProfileImage.removeAttribute("src");
+          navProfileImage.classList.add("hidden");
+          navProfileFallback.classList.remove("hidden");
+        }, { once: true });
+      }
+
+      function persistFetchedUser(user) {
+        if (!user || typeof user !== "object") {
+          return;
+        }
+
+        var storedUser = Object.assign({}, user);
+        var profileImage = typeof user.profileImage === "string" ? user.profileImage.trim() : "";
+        if (profileImage.startsWith("data:")) {
+          storedUser.profileImage = "";
+        }
+
+        localStorage.setItem("lf_auth_user", JSON.stringify(storedUser));
+
+        if (profileImage && !profileImage.startsWith("data:")) {
+          localStorage.setItem("lf_profile_photo", profileImage);
+          localStorage.setItem("lf_profile_image", profileImage);
+          localStorage.setItem("lf_user_dp", profileImage);
+          localStorage.setItem("lf_user_avatar", profileImage);
+        }
+      }
+
+      async function syncCurrentUser() {
+        if (!isLoggedIn()) {
+          return;
+        }
+
+        try {
+          var response = await fetch(window.LFAuth.API_BASE + "/auth/me", {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("lf_auth_token")
+            }
+          });
+          var result = await response.json().catch(function () {
+            return {};
+          });
+
+          if (!response.ok || !result.user) {
+            return;
+          }
+
+          persistFetchedUser(result.user);
+          applyProfileAvatar();
+        } catch (error) {
+          console.error("Failed to sync current user:", error);
+        }
+      }
+
+      function applyAuthNavState() {
+        var loggedIn = isLoggedIn();
+        if (navLogin) {
+          navLogin.classList.toggle("hidden", loggedIn);
+        }
+        if (navSignup) {
+          navSignup.classList.toggle("hidden", loggedIn);
+        }
+      }
+
+      function openSignupModal() {
+        if (!signupModal) {
+          return;
+        }
+        signupModal.classList.add("open");
+        signupModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        if (!signupModal) {
+          return;
+        }
+        signupModal.classList.remove("open");
+        signupModal.setAttribute("aria-hidden", "true");
+      }
+
+      function formatDate(value) {
+        var parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return "Date unavailable";
+        }
+
+        return parsed.toLocaleDateString(undefined, {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        });
+      }
+
+      function getSafeText(value, fallback) {
+        if (!value) {
+          return fallback;
+        }
+        var text = String(value).trim();
+        return text || fallback;
+      }
+
+      function renderRecentItems(items) {
+        recentItemsContainer.innerHTML = "";
+
+        if (!Array.isArray(items) || items.length === 0) {
+          recentItemsContainer.innerHTML = '<div class="state-card">No recent lost items found right now.</div>';
+          return;
+        }
+
+        var fragment = document.createDocumentFragment();
+        items.forEach(function (item) {
+          var card = document.createElement("article");
+          var preview = document.createElement("div");
+          var body = document.createElement("div");
+          var title = document.createElement("h3");
+          var meta = document.createElement("p");
+          var description = document.createElement("p");
+          var imageSrc = getSafeText(item.image || item.fullImage, "");
+
+          card.className = "item-card";
+          preview.className = "item-preview";
+          body.className = "item-body";
+          meta.className = "item-meta";
+          description.className = "item-description";
+
+          if (imageSrc) {
+            var img = document.createElement("img");
+            img.src = imageSrc;
+            img.alt = getSafeText(item.itemName, "Item") + " photo";
+            img.loading = "lazy";
+            img.addEventListener("error", (function (previewNode) {
+              return function () {
+                previewNode.innerHTML = '<span class="item-fallback">No Photo</span>';
+              };
+            })(preview));
+            preview.appendChild(img);
+          } else {
+            preview.innerHTML = '<span class="item-fallback">No Photo</span>';
+          }
+
+          title.textContent = getSafeText(item.itemName, "Unnamed item");
+          meta.textContent = getSafeText(item.location, "Unknown location") + " | " + formatDate(item.date);
+          description.textContent = getSafeText(item.description, "No description provided.");
+
+          body.appendChild(title);
+          body.appendChild(meta);
+          body.appendChild(description);
+          card.appendChild(preview);
+          card.appendChild(body);
+          fragment.appendChild(card);
+        });
+
+        recentItemsContainer.appendChild(fragment);
+      }
+
+      async function loadRecentItems() {
+        if (!recentItemsContainer) {
+          return;
+        }
+
+        if (!window.LFStore || typeof window.LFStore.fetchRecentLostItems !== "function") {
+          recentItemsContainer.innerHTML = '<div class="state-card error-card">Data store not loaded. Please refresh the page.</div>';
+          return;
+        }
+
+        try {
+          var items = await window.LFStore.fetchRecentLostItems(10);
+          renderRecentItems(items);
+        } catch (error) {
+          console.error("Failed to load recent lost items:", error);
+          recentItemsContainer.innerHTML = '<div class="state-card error-card">Unable to load recent lost items right now.</div>';
+        }
+      }
+
+      if (navToggle && primaryNav) {
+        navToggle.addEventListener("click", function () {
+          var expanded = navToggle.getAttribute("aria-expanded") === "true";
+          setNavOpen(!expanded);
+        });
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            setNavOpen(false);
+          }
+        });
+      }
+
+      if (signupModal) {
+        signupModal.addEventListener("click", function (event) {
+          if (event.target === signupModal) {
+            closeModal();
+          }
+        });
+      }
+
+      if (closeSignupModal) {
+        closeSignupModal.addEventListener("click", closeModal);
+      }
+
+      if (continueGuestBtn) {
+        continueGuestBtn.addEventListener("click", closeModal);
+      }
+
+      if (heroSearchForm && heroSearchInput) {
+        heroSearchForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var keyword = heroSearchInput.value.trim();
+          var params = new URLSearchParams();
+          params.set("mode", "search");
+          if (keyword) {
+            params.set("keyword", keyword);
+          }
+          window.location.href = "search.html?" + params.toString();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        applyAuthNavState();
+        applyProfileAvatar();
+        syncCurrentUser();
+        loadRecentItems();
+        setInterval(loadRecentItems, 30000);
+
+        if (!isLoggedIn()) {
+          setTimeout(openSignupModal, 250);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
