@@ -1,7 +1,7 @@
 (function () {
   const API_BASE = window.LFAuth && window.LFAuth.API_BASE
     ? window.LFAuth.API_BASE
-    : (localStorage.getItem("lf_api_base") || "http://localhost:5001/api");
+    : (localStorage.getItem("lf_api_base") || "https://findmystuff-backend-d16m.onrender.com/api");
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
   const STORAGE_KEYS = {
     lost: "lf_lost_items",
