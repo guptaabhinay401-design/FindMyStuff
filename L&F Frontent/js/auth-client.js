@@ -42,7 +42,7 @@
       return storedValue;
     }
 
-    return "http://localhost:5001/api";
+    return "https://findmystuff-backend-d16m.onrender.com/api";
   }
 
   const API_BASE = resolveApiBase();
