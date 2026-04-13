@@ -435,6 +435,26 @@ router.put("/items/:id/flag", authMiddleware, requireAdmin, async (req, res) => 
   }
 });
 
+router.put("/items/:id", authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    const { itemName, description, category, location } = req.body;
+    if (itemName) item.itemName = String(itemName).trim();
+    if (description !== undefined) item.description = String(description).trim();
+    if (category) item.category = String(category).trim();
+    if (location) item.location = String(location).trim();
+
+    await item.save();
+    res.json({ message: "Item updated successfully", item: serializeItem(item) });
+  } catch (error) {
+    res.status(500).json({ message: "Could not update item" });
+  }
+});
+
 router.delete("/items/:id", authMiddleware, requireAdmin, async (req, res) => {
   try {
     const deletedItem = await Item.findOneAndDelete({ _id: req.params.id }).select(ADMIN_ITEM_LIST_FIELDS).lean();

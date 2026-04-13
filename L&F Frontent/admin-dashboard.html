@@ -8,1434 +8,1164 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #10233e;
-    --muted: #60738e;
-    --surface: #ffffff;
-    --line: #d6e0ed;
-    --wash: #edf4fb;
-    --brand: #134074;
-    --brand-soft: #dceafe;
-    --accent: #f59e0b;
-    --danger: #dc2626;
-    --success: #15803d;
-  }
+:root{--brand:#0f3460;--brand-hover:#1a4a7a;--surface:#fff;--bg:#f1f5f9;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--success:#16a34a;--danger:#dc2626;--warning:#d97706;--info:#2563eb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);}
+.df{font-family:'Fraunces',serif;}
 
-  body {
-    font-family: "Manrope", sans-serif;
-    background:
-      radial-gradient(circle at top left, rgba(19, 64, 116, 0.14), transparent 28%),
-      radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 24%),
-      linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
-    color: var(--ink);
-  }
+/* Sidebar */
+#sidebar{position:fixed;left:0;top:0;bottom:0;width:256px;background:linear-gradient(170deg,#0a1628 0%,#0f2347 60%,#0c1d3a 100%);z-index:50;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:transform .28s cubic-bezier(.4,0,.2,1);}
+#sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;}
+#sidebarOverlay.on{display:block;}
+.main{margin-left:256px;min-height:100vh;transition:margin-left .28s cubic-bezier(.4,0,.2,1);}
+@media(max-width:768px){#sidebar{transform:translateX(-100%);}.sidebar-open #sidebar{transform:translateX(0);}.main{margin-left:0;}}
 
-  .display-font {
-    font-family: "Fraunces", serif;
-  }
+/* Nav */
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);transition:all .18s;border:none;background:none;width:100%;text-align:left;letter-spacing:.01em;}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(37,99,235,.3));color:#fff;border:1px solid rgba(96,165,250,.25);}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;}
 
-  .nav-button[data-active="true"] {
-    background: linear-gradient(135deg, #163f73, #235d9c);
-    color: #fff;
-    box-shadow: 0 16px 32px rgba(19, 64, 116, 0.24);
-  }
+/* Toast */
+.toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:9px;max-width:360px;}
+.toast{padding:13px 16px;border-radius:14px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.14);display:flex;align-items:flex-start;gap:10px;animation:toastIn .28s ease;cursor:pointer;}
+.toast.hide{animation:toastOut .25s ease forwards;}
+.toast.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;}
+.toast.error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;}
+.toast.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;}
+.toast.warning{background:#fffbeb;border:1px solid #fde68a;color:#b45309;}
+@keyframes toastIn{from{transform:translateX(110%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes toastOut{to{transform:translateX(110%);opacity:0;}}
 
-  .status-box[hidden] {
-    display: none;
-  }
+/* Sections */
+.section-panel{animation:panelIn .22s ease;}
+.section-panel.hidden{display:none;}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
-  .table-scroll::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
-  }
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease;}
+.modal-backdrop.hidden{display:none;}
+.modal-box{background:#fff;border-radius:22px;padding:26px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:scaleIn .22s ease;box-shadow:0 24px 60px rgba(0,0,0,.22);}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.93);}to{opacity:1;transform:scale(1);}}
 
-  .table-scroll::-webkit-scrollbar-thumb {
-    background: #c6d5e6;
-    border-radius: 999px;
-  }
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{padding:11px 14px;text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc;white-space:nowrap;position:sticky;top:0;z-index:2;border-bottom:1px solid #e2e8f0;}
+.tbl td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#334155;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:#fafbfc;}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+.b-active{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-resolved{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
+.b-rejected{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.b-lost{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-found{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
+.b-admin{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;}
+.b-student{background:#f8fafc;color:#475569;border:1px solid #e2e8f0;}
+.b-blocked{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.b-flagged{background:#fffbeb;color:#b45309;border:1px solid #fde68a;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:8px;}
+.b-primary{background:#0f3460;color:#fff;}.b-primary:hover{background:#1a4a7a;}
+.b-success{background:#16a34a;color:#fff;}.b-success:hover{background:#15803d;}
+.b-danger{background:#dc2626;color:#fff;}.b-danger:hover{background:#b91c1c;}
+.b-warning{background:#d97706;color:#fff;}.b-warning:hover{background:#b45309;}
+.b-ghost{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}.b-ghost:hover{background:#e2e8f0;}
+.b-outline{background:transparent;border:1.5px solid #e2e8f0;color:#475569;}.b-outline:hover{background:#f8fafc;}
+btn:disabled{opacity:.55;cursor:not-allowed;}
+
+/* Card */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:22px;box-shadow:0 1px 6px rgba(0,0,0,.05);}
+
+/* Input */
+.inp{width:100%;border:1.5px solid #e2e8f0;border-radius:11px;padding:9px 13px;font-size:13px;font-family:inherit;color:var(--ink);background:#fafbfc;outline:none;transition:border-color .15s;}
+.inp:focus{border-color:#3b82f6;background:#fff;}
+textarea.inp{resize:vertical;min-height:80px;}
+
+/* Skeleton */
+.skel{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* Announcement card */
+.ann-card{padding:13px 15px;border-radius:0 13px 13px 0;border-left:4px solid;margin-bottom:8px;}
+.ann-info{border-color:#3b82f6;background:#eff6ff;}
+.ann-warning{border-color:#d97706;background:#fffbeb;}
+.ann-urgent{border-color:#dc2626;background:#fef2f2;}
+
+/* Toggle switch */
+.tog{position:relative;width:42px;height:22px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;position:absolute;}
+.tog-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:22px;transition:.25s;}
+.tog-slider::before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;}
+.tog input:checked+.tog-slider{background:#2563eb;}
+.tog input:checked+.tog-slider::before{transform:translateX(20px);}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+
+/* Stat card */
+.stat-num{font-size:2.5rem;font-weight:700;line-height:1;font-family:'Fraunces',serif;}
 </style>
 </head>
-<body class="min-h-screen">
-<div class="min-h-screen xl:flex">
-  <aside class="border-b border-slate-200 bg-slate-950 px-4 py-6 text-white xl:min-h-screen xl:w-80 xl:border-b-0 xl:border-r xl:border-slate-800 xl:px-6">
-    <div class="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-slate-950/30">
-      <p class="text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">Admin Console</p>
-      <h1 class="display-font mt-3 text-4xl leading-none text-white">FindMyStuff</h1>
-      <p class="mt-3 text-sm leading-6 text-slate-300">Moderate users, review reports, and track platform activity from one secure workspace.</p>
+<body>
+
+<!-- Sidebar overlay (mobile) -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div style="padding:20px 16px 0;">
+    <!-- Brand -->
+    <div style="margin-bottom:28px;">
+      <p style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(147,197,253,.7);margin-bottom:6px;">Admin Console</p>
+      <h1 class="df" style="font-size:1.7rem;color:#fff;line-height:1.1;">FindMyStuff</h1>
+      <p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px;">Administration Panel</p>
     </div>
 
-    <nav id="sidebarNav" class="mt-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-      <button type="button" class="nav-button flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10" data-section="dashboard" data-active="true">Dashboard</button>
-      <button type="button" class="nav-button flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10" data-section="users" data-active="false">Users</button>
-      <button type="button" class="nav-button flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10" data-section="items" data-active="false">Items</button>
-      <button type="button" class="nav-button flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10" data-section="flagged" data-active="false">Flagged Content</button>
-      <button type="button" class="nav-button flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:bg-white/10" data-section="settings" data-active="false">Settings</button>
+    <!-- Navigation -->
+    <nav style="display:flex;flex-direction:column;gap:4px;">
+      <button class="nav-item active" data-sec="dashboard" onclick="switchSection('dashboard',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-sec="users" onclick="switchSection('users',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span id="navBadgeUsers" style="margin-left:auto;font-size:11px;background:rgba(96,165,250,.25);color:#93c5fd;padding:1px 7px;border-radius:999px;display:none;"></span>
+      </button>
+      <button class="nav-item" data-sec="items" onclick="switchSection('items',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Items
+        <span id="navBadgeItems" style="margin-left:auto;font-size:11px;background:rgba(96,165,250,.25);color:#93c5fd;padding:1px 7px;border-radius:999px;display:none;"></span>
+      </button>
+      <button class="nav-item" data-sec="flagged" onclick="switchSection('flagged',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Flagged Content
+        <span id="navBadgeFlagged" style="margin-left:auto;font-size:11px;background:rgba(252,165,165,.25);color:#fca5a5;padding:1px 7px;border-radius:999px;display:none;"></span>
+      </button>
+      <button class="nav-item" data-sec="announcements" onclick="switchSection('announcements',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Announcements
+      </button>
+      <button class="nav-item" data-sec="settings" onclick="switchSection('settings',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
     </nav>
+  </div>
 
-    <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">Session</p>
-      <div class="mt-3 flex items-center gap-3">
-        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white/10">
-          <img id="adminAvatar" alt="Admin avatar" class="hidden h-full w-full object-cover">
-          <span id="adminAvatarFallback" class="text-lg font-semibold text-white">A</span>
+  <!-- Session -->
+  <div style="margin-top:auto;padding:16px;">
+    <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:15px;">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(59,130,246,.2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+          <img id="adminAvatar" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
+          <span id="adminAvatarFallback" style="font-size:15px;font-weight:700;color:#93c5fd;">A</span>
         </div>
-        <div class="min-w-0">
-          <p id="adminName" class="truncate text-sm font-semibold text-white">Admin</p>
-          <p id="adminEmail" class="truncate text-xs text-slate-300">admin@findmystuff.local</p>
+        <div style="min-width:0;">
+          <p id="adminName" style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Admin</p>
+          <p id="adminEmail" style="font-size:11.5px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading...</p>
         </div>
       </div>
-      <button id="adminLogoutBtn" type="button" class="mt-4 w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700">Logout</button>
+      <button onclick="logout()" style="margin-top:12px;width:100%;padding:8px;border-radius:11px;background:rgba(239,68,68,.18);color:#fca5a5;font-size:12px;font-weight:600;border:1px solid rgba(239,68,68,.2);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,.28)'" onmouseout="this.style.background='rgba(239,68,68,.18)'">
+        Sign Out
+      </button>
     </div>
-  </aside>
+  </div>
+</aside>
 
-  <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 xl:px-8">
-    <header class="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-lg shadow-slate-200/50 backdrop-blur">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+<!-- Main -->
+<div class="main">
+  <!-- Header -->
+  <header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid #e2e8f0;padding:14px 24px;display:flex;align-items:center;gap:12px;">
+    <button onclick="toggleSidebar()" style="display:none;padding:8px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;" id="hamburger">
+      <svg style="width:18px;height:18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div>
+      <h2 class="df" style="font-size:1.45rem;color:#0f172a;line-height:1.1;">Administration Dashboard</h2>
+      <p style="font-size:12px;color:#64748b;margin-top:2px;">Monitor and manage the FindMyStuff platform</p>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <span id="liveClock" style="font-size:12px;color:#94a3b8;font-weight:500;"></span>
+      <button onclick="refreshAll()" class="btn b-ghost" style="font-size:12px;padding:7px 13px;">
+        <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div style="padding:24px;max-width:1400px;">
+
+  <!-- ===== SECTION: DASHBOARD ===== -->
+  <section id="section-dashboard" class="section-panel">
+    <!-- Stat Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;">
+      <div class="card" style="padding:20px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;">Total Lost</p>
+        <p id="statLost" class="stat-num" style="color:#1d4ed8;margin-top:10px;">—</p>
+        <p style="font-size:11.5px;color:#94a3b8;margin-top:6px;">Reported items</p>
+      </div>
+      <div class="card" style="padding:20px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;">Total Found</p>
+        <p id="statFound" class="stat-num" style="color:#15803d;margin-top:10px;">—</p>
+        <p style="font-size:11.5px;color:#94a3b8;margin-top:6px;">Found reports</p>
+      </div>
+      <div class="card" style="padding:20px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;">Total Users</p>
+        <p id="statUsers" class="stat-num" style="color:#7e22ce;margin-top:10px;">—</p>
+        <p style="font-size:11.5px;color:#94a3b8;margin-top:6px;">Registered accounts</p>
+      </div>
+      <div class="card" style="padding:20px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;">Resolved</p>
+        <p id="statResolved" class="stat-num" style="color:#b45309;margin-top:10px;">—</p>
+        <p style="font-size:11.5px;color:#94a3b8;margin-top:6px;">Items returned</p>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:22px;">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <p style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;">Last 7 Days</p>
+            <h3 style="font-size:16px;font-weight:600;color:#0f172a;margin-top:3px;">Weekly Activity</h3>
+          </div>
+          <span style="font-size:11px;font-weight:600;background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:999px;">Live</span>
+        </div>
+        <div style="height:240px;"><canvas id="weeklyChart"></canvas></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="flex:1;">
+          <h3 style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:12px;">Top Categories</h3>
+          <div style="height:140px;"><canvas id="catChart"></canvas></div>
+        </div>
+        <div class="card" style="flex:1;">
+          <h3 style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:12px;">Top Locations</h3>
+          <div style="height:140px;"><canvas id="locChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:14px;font-weight:600;color:#0f172a;">Recent Lost Reports</h3>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;">Latest 10</span>
+        </div>
+        <div id="recentLostList"><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;"></div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:14px;font-weight:600;color:#0f172a;">Recent Found Reports</h3>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;">Latest 10</span>
+        </div>
+        <div id="recentFoundList"><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;"></div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:14px;font-weight:600;color:#0f172a;">Recent Users</h3>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;">Latest 10</span>
+        </div>
+        <div id="recentUsersList"><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;margin-bottom:8px;"></div><div class="skel" style="height:56px;"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: USERS ===== -->
+  <section id="section-users" class="section-panel hidden">
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Protected Workspace</p>
-          <h2 class="display-font mt-2 text-3xl text-[var(--ink)]">Administration Dashboard</h2>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Monitor reports, manage users, review flagged content, and keep the system healthy without leaving this page.</p>
+          <p style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;">User Management</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:3px;">All Users</h3>
         </div>
-        <button id="refreshAllBtn" type="button" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white">Refresh Data</button>
-      </div>
-    </header>
-
-    <div id="globalStatus" class="status-box mt-4 rounded-2xl border px-4 py-3 text-sm font-medium" hidden></div>
-
-    <section id="section-dashboard" class="section-panel mt-6">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">Total Lost</p>
-          <p id="statLost" class="display-font mt-4 text-5xl text-[var(--brand)]">0</p>
-        </article>
-        <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">Total Found</p>
-          <p id="statFound" class="display-font mt-4 text-5xl text-emerald-700">0</p>
-        </article>
-        <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">Total Users</p>
-          <p id="statUsers" class="display-font mt-4 text-5xl text-amber-600">0</p>
-        </article>
-        <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">Resolved Items</p>
-          <p id="statResolved" class="display-font mt-4 text-5xl text-violet-700">0</p>
-        </article>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <input id="usersSearch" class="inp" style="width:200px;" type="search" placeholder="Search name or email…" oninput="filterUsersLocal()">
+          <select id="usersRoleFilter" class="inp" style="width:130px;" onchange="filterUsersLocal()">
+            <option value="">All Roles</option>
+            <option value="student">Student</option>
+            <option value="admin">Admin</option>
+          </select>
+          <select id="usersStatusFilter" class="inp" style="width:130px;" onchange="filterUsersLocal()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked</option>
+          </select>
+          <button class="btn b-primary btn-sm" onclick="loadUsers()">Reload</button>
+        </div>
       </div>
 
-      <div id="dashboardStatus" class="status-box mt-4 rounded-2xl border px-4 py-3 text-sm font-medium" hidden></div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Name</th><th>Email</th><th>Role</th><th>Mobile</th><th>Joined</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:#94a3b8;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <p id="usersPageInfo" style="font-size:12.5px;color:#64748b;">—</p>
+        <div style="display:flex;gap:8px;">
+          <button id="usersPrev" class="btn b-ghost btn-sm" onclick="changeUsersPage(-1)">← Prev</button>
+          <button id="usersNext" class="btn b-ghost btn-sm" onclick="changeUsersPage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <div class="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <div class="flex items-center justify-between gap-3">
+  <!-- ===== SECTION: ITEMS ===== -->
+  <section id="section-items" class="section-panel hidden">
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;">
+        <div>
+          <p style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;">Report Moderation</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:3px;">All Items</h3>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <input id="itemsSearch" class="inp" style="width:180px;" type="search" placeholder="Search…" oninput="debounceItems()">
+          <select id="itemsTypeFilter" class="inp" style="width:120px;" onchange="loadItems()">
+            <option value="">All Types</option>
+            <option value="lost">Lost</option>
+            <option value="found">Found</option>
+          </select>
+          <select id="itemsStatusFilter" class="inp" style="width:130px;" onchange="loadItems()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="resolved">Resolved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select id="itemsCategoryFilter" class="inp" style="width:140px;" onchange="loadItems()">
+            <option value="">All Categories</option>
+          </select>
+          <button class="btn b-primary btn-sm" onclick="loadItems()">Apply</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Item</th><th>Type</th><th>Category</th><th>Location</th><th>Date</th><th>Status</th><th>Reporter</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:#94a3b8;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <p id="itemsPageInfo" style="font-size:12.5px;color:#64748b;">—</p>
+        <div style="display:flex;gap:8px;">
+          <button id="itemsPrev" class="btn b-ghost btn-sm" onclick="changeItemsPage(-1)">← Prev</button>
+          <button id="itemsNext" class="btn b-ghost btn-sm" onclick="changeItemsPage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: FLAGGED ===== -->
+  <section id="section-flagged" class="section-panel hidden">
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <p style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;">Trust & Safety</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:3px;">Flagged Content</h3>
+        </div>
+        <button class="btn b-warning btn-sm" onclick="loadFlagged()">
+          <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Reload Flagged
+        </button>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Item</th><th>Type</th><th>Location</th><th>Flag Reason</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="flaggedTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <p id="flaggedPageInfo" style="font-size:12.5px;color:#64748b;">—</p>
+        <div style="display:flex;gap:8px;">
+          <button id="flaggedPrev" class="btn b-ghost btn-sm" onclick="changeFlaggedPage(-1)">← Prev</button>
+          <button id="flaggedNext" class="btn b-ghost btn-sm" onclick="changeFlaggedPage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: ANNOUNCEMENTS ===== -->
+  <section id="section-announcements" class="section-panel hidden">
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:18px;">
+      <!-- Send form -->
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:16px;">Send Announcement</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Title</label>
+            <input id="annTitle" class="inp" type="text" placeholder="Announcement title…">
+          </div>
+          <div>
+            <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Message</label>
+            <textarea id="annMessage" class="inp" placeholder="Write your message here…" rows="4"></textarea>
+          </div>
+          <div>
+            <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Priority</label>
+            <select id="annPriority" class="inp">
+              <option value="info">ℹ️ Info</option>
+              <option value="warning">⚠️ Warning</option>
+              <option value="urgent">🚨 Urgent</option>
+            </select>
+          </div>
+          <button class="btn b-primary" onclick="sendAnnouncement()" style="justify-content:center;">
+            <svg style="width:15px;height:15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send Announcement
+          </button>
+        </div>
+      </div>
+      <!-- Log -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:16px;font-weight:700;color:#0f172a;">Notification Log</h3>
+          <button onclick="clearAnnouncements()" class="btn b-ghost btn-sm" style="font-size:11px;">Clear All</button>
+        </div>
+        <div id="annLog" style="max-height:420px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: SETTINGS ===== -->
+  <section id="section-settings" class="section-panel hidden">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
+      <!-- Categories -->
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:14px;">Item Categories</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="newCategoryInput" class="inp" type="text" placeholder="New category name…" onkeydown="if(event.key==='Enter')addCategory()">
+          <button class="btn b-primary btn-sm" onclick="addCategory()">Add</button>
+        </div>
+        <ul id="categoriesList" style="list-style:none;display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"></ul>
+      </div>
+      <!-- Locations -->
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:14px;">Locations</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="newLocationInput" class="inp" type="text" placeholder="New location name…" onkeydown="if(event.key==='Enter')addLocation()">
+          <button class="btn b-primary btn-sm" onclick="addLocation()">Add</button>
+        </div>
+        <ul id="locationsList" style="list-style:none;display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"></ul>
+      </div>
+      <!-- Feature Toggles -->
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px;">Feature Toggles</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Last 7 Days</p>
-              <h3 class="mt-2 text-xl font-semibold text-[var(--ink)]">Weekly Activity</h3>
+              <p style="font-size:13px;font-weight:600;color:#0f172a;">Guest Browsing</p>
+              <p style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Allow non-logged-in users to view items</p>
             </div>
-            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Live analytics</span>
+            <label class="tog"><input type="checkbox" id="tog-guest" onchange="saveToggle('guest',this.checked)" checked><span class="tog-slider"></span></label>
           </div>
-          <div class="mt-5 h-80">
-            <canvas id="weeklyActivityChart"></canvas>
-          </div>
-        </section>
-
-        <section class="grid gap-6">
-          <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-            <h3 class="text-lg font-semibold text-[var(--ink)]">Top Categories</h3>
-            <div class="mt-4 h-64">
-              <canvas id="topCategoriesChart"></canvas>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <p style="font-size:13px;font-weight:600;color:#0f172a;">Show Contact Info</p>
+              <p style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Display reporter contact on public pages</p>
             </div>
-          </article>
-          <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-            <h3 class="text-lg font-semibold text-[var(--ink)]">Top Locations</h3>
-            <div class="mt-4 h-64">
-              <canvas id="topLocationsChart"></canvas>
+            <label class="tog"><input type="checkbox" id="tog-contact" onchange="saveToggle('contact',this.checked)" checked><span class="tog-slider"></span></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <p style="font-size:13px;font-weight:600;color:#0f172a;">New Registrations</p>
+              <p style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Allow new users to sign up</p>
             </div>
-          </article>
-        </section>
-      </div>
-
-      <div class="mt-6 grid gap-6 xl:grid-cols-3">
-        <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-lg font-semibold text-[var(--ink)]">Recent Lost Reports</h3>
-            <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Latest 10</span>
+            <label class="tog"><input type="checkbox" id="tog-signup" onchange="saveToggle('signup',this.checked)" checked><span class="tog-slider"></span></label>
           </div>
-          <div id="recentLostList" class="mt-4 grid gap-3"></div>
-        </section>
-        <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-lg font-semibold text-[var(--ink)]">Recent Found Reports</h3>
-            <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Latest 10</span>
-          </div>
-          <div id="recentFoundList" class="mt-4 grid gap-3"></div>
-        </section>
-        <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-lg font-semibold text-[var(--ink)]">Recent Users</h3>
-            <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Latest 10</span>
-          </div>
-          <div id="recentUsersList" class="mt-4 grid gap-3"></div>
-        </section>
-      </div>
-    </section>
-
-    <section id="section-users" class="section-panel mt-6 hidden">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">User Management</p>
-            <h3 class="mt-2 text-2xl font-semibold text-[var(--ink)]">Users</h3>
-          </div>
-          <div class="grid gap-3 sm:grid-cols-3">
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Search
-              <input id="usersSearchInput" type="search" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white" placeholder="Filter current page by name or email">
-            </label>
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Role
-              <select id="usersRoleFilter" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white">
-                <option value="">All Roles</option>
-                <option value="student">Student</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
-            <div class="flex items-end gap-3">
-              <button id="usersReloadBtn" type="button" class="w-full rounded-2xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1b568f]">Reload</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <p style="font-size:13px;font-weight:600;color:#0f172a;">Email Notifications</p>
+              <p style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Send system email alerts</p>
             </div>
-          </div>
-        </div>
-
-        <div id="usersStatus" class="status-box mt-4 rounded-2xl border px-4 py-3 text-sm font-medium" hidden></div>
-
-        <div class="table-scroll mt-5 overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="px-4 py-3 font-semibold">Name</th>
-                <th class="px-4 py-3 font-semibold">Email</th>
-                <th class="px-4 py-3 font-semibold">Role</th>
-                <th class="px-4 py-3 font-semibold">Mobile</th>
-                <th class="px-4 py-3 font-semibold">Status</th>
-                <th class="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
-          </table>
-        </div>
-
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p id="usersPageInfo" class="text-sm text-slate-500">Page 1 of 1</p>
-          <div class="flex gap-3">
-            <button id="usersPrevBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Previous</button>
-            <button id="usersNextBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Next</button>
+            <label class="tog"><input type="checkbox" id="tog-email" onchange="saveToggle('email',this.checked)"><span class="tog-slider"></span></label>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="section-items" class="section-panel mt-6 hidden">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Report Moderation</p>
-            <h3 class="mt-2 text-2xl font-semibold text-[var(--ink)]">Items</h3>
-          </div>
-          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Search
-              <input id="itemsSearchInput" type="search" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white" placeholder="Search item or reporter">
-            </label>
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Type
-              <select id="itemsTypeFilter" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white">
-                <option value="">All Types</option>
-                <option value="lost">Lost</option>
-                <option value="found">Found</option>
-              </select>
-            </label>
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Status
-              <select id="itemsStatusFilter" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white">
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="resolved">Resolved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </label>
-            <label class="grid gap-2 text-sm font-medium text-slate-700">
-              Category
-              <select id="itemsCategoryFilter" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-400 focus:bg-white">
-                <option value="">All Categories</option>
-              </select>
-            </label>
-            <div class="flex items-end gap-3">
-              <button id="itemsApplyBtn" type="button" class="w-full rounded-2xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1b568f]">Apply</button>
-            </div>
-          </div>
+  </div><!-- /padding -->
+</div><!-- /main -->
+
+<!-- ===== EDIT ITEM MODAL ===== -->
+<div id="editItemModal" class="modal-backdrop hidden">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:700;color:#0f172a;">Edit Item</h3>
+      <button onclick="closeModal('editItemModal')" style="border:none;background:#f1f5f9;border-radius:9px;padding:6px 10px;cursor:pointer;font-size:16px;color:#64748b;">✕</button>
+    </div>
+    <input type="hidden" id="editItemId">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Item Name</label>
+        <input id="editItemName" class="inp" type="text" placeholder="Item name">
+      </div>
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Description</label>
+        <textarea id="editItemDesc" class="inp" rows="3" placeholder="Description"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Category</label>
+          <input id="editItemCategory" class="inp" type="text" placeholder="Category">
         </div>
-
-        <div id="itemsStatusBox" class="status-box mt-4 rounded-2xl border px-4 py-3 text-sm font-medium" hidden></div>
-
-        <div class="table-scroll mt-5 overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="px-4 py-3 font-semibold">Item Name</th>
-                <th class="px-4 py-3 font-semibold">Type</th>
-                <th class="px-4 py-3 font-semibold">Category</th>
-                <th class="px-4 py-3 font-semibold">Location</th>
-                <th class="px-4 py-3 font-semibold">Date</th>
-                <th class="px-4 py-3 font-semibold">Status</th>
-                <th class="px-4 py-3 font-semibold">Reporter</th>
-                <th class="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="itemsTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
-          </table>
-        </div>
-
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p id="itemsPageInfo" class="text-sm text-slate-500">Page 1 of 1</p>
-          <div class="flex gap-3">
-            <button id="itemsPrevBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Previous</button>
-            <button id="itemsNextBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Next</button>
-          </div>
+        <div>
+          <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Location</label>
+          <input id="editItemLocation" class="inp" type="text" placeholder="Location">
         </div>
       </div>
-    </section>
-
-    <section id="section-flagged" class="section-panel mt-6 hidden">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Trust & Safety</p>
-            <h3 class="mt-2 text-2xl font-semibold text-[var(--ink)]">Flagged Content</h3>
-          </div>
-          <div class="flex gap-3">
-            <button id="flaggedReloadBtn" type="button" class="rounded-2xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1b568f]">Reload Flagged Items</button>
-          </div>
-        </div>
-
-        <div id="flaggedStatus" class="status-box mt-4 rounded-2xl border px-4 py-3 text-sm font-medium" hidden></div>
-
-        <div class="table-scroll mt-5 overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="px-4 py-3 font-semibold">Item Name</th>
-                <th class="px-4 py-3 font-semibold">Type</th>
-                <th class="px-4 py-3 font-semibold">Location</th>
-                <th class="px-4 py-3 font-semibold">Reason</th>
-                <th class="px-4 py-3 font-semibold">Status</th>
-                <th class="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="flaggedTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
-          </table>
-        </div>
-
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p id="flaggedPageInfo" class="text-sm text-slate-500">Page 1 of 1</p>
-          <div class="flex gap-3">
-            <button id="flaggedPrevBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Previous</button>
-            <button id="flaggedNextBtn" type="button" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Next</button>
-          </div>
-        </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+        <button onclick="closeModal('editItemModal')" class="btn b-ghost">Cancel</button>
+        <button onclick="submitEditItem()" class="btn b-primary">Save Changes</button>
       </div>
-    </section>
-
-    <section id="section-settings" class="section-panel mt-6 hidden">
-      <div class="rounded-[2rem] border border-dashed border-slate-300 bg-white/80 p-8 shadow-lg shadow-slate-200/50">
-        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Settings</p>
-        <h3 class="display-font mt-3 text-3xl text-[var(--ink)]">Placeholder</h3>
-        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">This section is reserved for future admin configuration options such as notification rules, moderation thresholds, and reporting preferences.</p>
-      </div>
-    </section>
-  </main>
+    </div>
+  </div>
 </div>
+
+<!-- ===== VIEW USER MODAL ===== -->
+<div id="viewUserModal" class="modal-backdrop hidden">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:700;color:#0f172a;">User Profile</h3>
+      <button onclick="closeModal('viewUserModal')" style="border:none;background:#f1f5f9;border-radius:9px;padding:6px 10px;cursor:pointer;font-size:16px;color:#64748b;">✕</button>
+    </div>
+    <div id="viewUserContent"></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-wrap" id="toastContainer"></div>
 
 <script src="js/auth-client.js"></script>
 <script>
 const API_BASE = window.LFAuth.API_BASE;
-const STATUS_COLORS = {
-  active: ["bg-blue-50", "text-blue-700", "border-blue-200"],
-  resolved: ["bg-emerald-50", "text-emerald-700", "border-emerald-200"],
-  rejected: ["bg-red-50", "text-red-700", "border-red-200"]
+
+/* ─── STATE ─── */
+const ST = {
+  charts:{weekly:null,cat:null,loc:null},
+  categories:[],
+  users:{page:1,limit:20,rows:[],filtered:[],pagination:null},
+  items:{page:1,limit:20,rows:[],pagination:null,debTimer:null},
+  flagged:{page:1,limit:20,rows:[],pagination:null}
 };
 
-const state = {
-  charts: {
-    weekly: null,
-    categories: null,
-    locations: null
-  },
-  categories: [],
-  users: {
-    page: 1,
-    limit: 20,
-    search: "",
-    role: "",
-    rows: [],
-    pagination: null
-  },
-  items: {
-    page: 1,
-    limit: 20,
-    search: "",
-    type: "",
-    status: "",
-    category: "",
-    rows: [],
-    pagination: null
-  },
-  flagged: {
-    page: 1,
-    limit: 20,
-    rows: [],
-    pagination: null
-  }
-};
+/* ─── UTILS ─── */
+function fmt(v){const d=new Date(v);return isNaN(d)?'—':d.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});}
+function safeText(v,fb){const t=String(v||'').trim();return t||fb;}
 
-const globalStatus = document.getElementById("globalStatus");
-const dashboardStatus = document.getElementById("dashboardStatus");
-const usersStatus = document.getElementById("usersStatus");
-const itemsStatusBox = document.getElementById("itemsStatusBox");
-const flaggedStatus = document.getElementById("flaggedStatus");
-const adminAvatar = document.getElementById("adminAvatar");
-const adminAvatarFallback = document.getElementById("adminAvatarFallback");
-const adminName = document.getElementById("adminName");
-const adminEmail = document.getElementById("adminEmail");
-
-function clearSession() {
-  localStorage.removeItem("lf_auth_token");
-  localStorage.removeItem("lf_auth_user");
-  localStorage.removeItem("lf_profile_photo");
-  localStorage.removeItem("lf_profile_image");
-  localStorage.removeItem("lf_user_dp");
-  localStorage.removeItem("lf_user_avatar");
+function toast(msg,type='info',duration=3800){
+  const c=document.getElementById('toastContainer');
+  const icons={success:'✓',error:'✕',info:'ℹ',warning:'⚠'};
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML='<span style="font-size:15px;flex-shrink:0;">'+icons[type]+'</span><span>'+msg+'</span>';
+  t.onclick=()=>dismissToast(t);
+  c.appendChild(t);
+  setTimeout(()=>dismissToast(t),duration);
 }
+function dismissToast(t){t.classList.add('hide');setTimeout(()=>t.remove(),280);}
 
-function getToken() {
-  return localStorage.getItem("lf_auth_token") || "";
-}
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
 
-function getCurrentUser() {
-  const raw = localStorage.getItem("lf_auth_user");
-  if (!raw) {
-    return null;
-  }
+function badge(text,cls){return'<span class="badge '+cls+'">'+safeText(text,'—')+'</span>';}
+function statusBadge(s){const m={active:'b-active',resolved:'b-resolved',rejected:'b-rejected'};return badge(s||'active',m[s]||'b-active');}
 
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    return null;
-  }
-}
+/* ─── AUTH ─── */
+function getToken(){return localStorage.getItem('lf_auth_token')||'';}
+function getCurrentUser(){try{return JSON.parse(localStorage.getItem('lf_auth_user')||'null');}catch(e){return null;}}
+function clearSession(){['lf_auth_token','lf_auth_user','lf_profile_photo','lf_profile_image','lf_user_dp','lf_user_avatar'].forEach(k=>localStorage.removeItem(k));}
+function logout(){clearSession();window.location.href='admin-login.html';}
 
-function redirectToLogin() {
-  clearSession();
-  window.location.href = "admin-login.html";
-}
-
-function ensureAdminSession() {
-  const token = getToken();
-  const user = getCurrentUser();
-  if (!token || !user || user.role !== "admin") {
-    redirectToLogin();
-    return false;
-  }
-
+function ensureAdmin(){
+  const tk=getToken(),u=getCurrentUser();
+  if(!tk||!u||u.role!=='admin'){clearSession();window.location.href='admin-login.html';return false;}
   return true;
 }
 
-function setStatus(target, message, type) {
-  if (!message) {
-    target.hidden = true;
-    target.textContent = "";
-    target.className = "status-box rounded-2xl border px-4 py-3 text-sm font-medium";
-    return;
-  }
-
-  target.hidden = false;
-  target.textContent = message;
-  target.className = "status-box rounded-2xl border px-4 py-3 text-sm font-medium";
-
-  if (type === "error") {
-    target.classList.add("border-red-200", "bg-red-50", "text-red-700");
-    return;
-  }
-
-  if (type === "success") {
-    target.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-700");
-    return;
-  }
-
-  target.classList.add("border-blue-200", "bg-blue-50", "text-blue-700");
+function renderAdminProfile(){
+  const u=getCurrentUser();
+  if(!u)return;
+  document.getElementById('adminName').textContent=safeText(u.name,'Admin');
+  document.getElementById('adminEmail').textContent=safeText(u.email,'—');
+  const fallback=document.getElementById('adminAvatarFallback');
+  const avatar=document.getElementById('adminAvatar');
+  fallback.textContent=(safeText(u.name,'A')[0]).toUpperCase();
+  const img=u.profileImage||localStorage.getItem('lf_profile_photo')||'';
+  if(img&&!img.startsWith('data:')){avatar.src=img;avatar.style.display='block';fallback.style.display='none';}
 }
 
-function setActiveSection(sectionName) {
-  document.querySelectorAll(".section-panel").forEach(function (panel) {
-    panel.classList.add("hidden");
+/* ─── SIDEBAR ─── */
+function toggleSidebar(){
+  document.body.classList.toggle('sidebar-open');
+  document.getElementById('sidebarOverlay').classList.toggle('on');
+}
+function closeSidebar(){
+  document.body.classList.remove('sidebar-open');
+  document.getElementById('sidebarOverlay').classList.remove('on');
+}
+
+/* ─── NAVIGATION ─── */
+function switchSection(name,btn){
+  document.querySelectorAll('.section-panel').forEach(s=>s.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const panel=document.getElementById('section-'+name);
+  if(panel){panel.classList.remove('hidden');}
+  if(btn){btn.classList.add('active');}
+  closeSidebar();
+  if(name==='users'&&ST.users.rows.length===0)loadUsers();
+  if(name==='items'&&ST.items.rows.length===0)loadItems();
+  if(name==='flagged'&&ST.flagged.rows.length===0)loadFlagged();
+  if(name==='announcements')renderAnnouncements();
+  if(name==='settings')renderSettings();
+}
+
+/* ─── API ─── */
+async function api(path,opts={}){
+  const tk=getToken();
+  if(!tk){window.location.href='admin-login.html';throw new Error('Unauthorized');}
+  const res=await fetch(API_BASE+path,{...opts,headers:{Authorization:'Bearer '+tk,'Content-Type':'application/json',...(opts.headers||{})}});
+  const data=await res.json().catch(()=>({}));
+  if(res.status===401){clearSession();window.location.href='admin-login.html';throw new Error('Session expired');}
+  if(!res.ok)throw new Error(data.message||'Request failed');
+  return data;
+}
+
+/* ─── LIVE CLOCK ─── */
+function startClock(){
+  const el=document.getElementById('liveClock');
+  function tick(){el.textContent=new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+  tick();setInterval(tick,1000);
+}
+
+/* ─── REFRESH ALL ─── */
+function refreshAll(){loadDashboard();}
+
+/* ─── DASHBOARD ─── */
+async function loadDashboard(){
+  try{
+    const [overview,stats]=await Promise.all([api('/admin/overview'),api('/admin/stats')]);
+    animateCount('statLost',overview.counts.lost||0);
+    animateCount('statFound',overview.counts.found||0);
+    animateCount('statUsers',overview.counts.users||0);
+    animateCount('statResolved',overview.counts.resolved||0);
+    renderRecentList('recentLostList',overview.lostItems||[],'item');
+    renderRecentList('recentFoundList',overview.foundItems||[],'item');
+    renderRecentList('recentUsersList',overview.users||[],'user');
+    renderCharts(stats);
+    const fi=overview.lostItems?.filter(i=>i.flagged).length||0;
+    if(fi>0){const b=document.getElementById('navBadgeFlagged');b.textContent=fi;b.style.display='inline';}
+  }catch(e){toast('Failed to load dashboard: '+e.message,'error');}
+}
+
+function animateCount(id,target){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let current=0;
+  const step=Math.max(1,Math.floor(target/40));
+  const timer=setInterval(()=>{
+    current=Math.min(current+step,target);
+    el.textContent=current;
+    if(current>=target)clearInterval(timer);
+  },25);
+}
+
+function renderRecentList(containerId,rows,kind){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  if(!rows.length){el.innerHTML='<p style="font-size:12.5px;color:#94a3b8;text-align:center;padding:16px;">No records yet.</p>';return;}
+  el.innerHTML=rows.slice(0,10).map(r=>{
+    if(kind==='user'){
+      return`<div style="padding:10px 12px;background:#f8fafc;border-radius:11px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:13px;font-weight:600;color:#0f172a;">${safeText(r.name,'Unnamed')}</p><p style="font-size:11.5px;color:#94a3b8;">${safeText(r.email,'—')}</p></div>
+        ${r.isBlocked?badge('Blocked','b-blocked'):badge(r.role||'student',r.role==='admin'?'b-admin':'b-student')}
+      </div>`;}
+    return`<div style="padding:10px 12px;background:#f8fafc;border-radius:11px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;">
+      <div><p style="font-size:13px;font-weight:600;color:#0f172a;">${safeText(r.itemName,'Unnamed item')}</p><p style="font-size:11.5px;color:#94a3b8;">${safeText(r.location,'—')} · ${fmt(r.date)}</p></div>
+      ${statusBadge(r.status)}
+    </div>`;
+  }).join('');
+}
+
+function destroyChart(key){if(ST.charts[key]){ST.charts[key].destroy();ST.charts[key]=null;}}
+
+function renderCharts(stats){
+  destroyChart('weekly');destroyChart('cat');destroyChart('loc');
+  const wls=stats.weeklyActivity||[];
+  ST.charts.weekly=new Chart(document.getElementById('weeklyChart').getContext('2d'),{
+    data:{labels:wls.map(e=>new Date(e.date).toLocaleDateString(undefined,{month:'short',day:'numeric'})),
+      datasets:[{type:'line',label:'Lost',data:wls.map(e=>e.lost),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',tension:.4,fill:true,borderWidth:2,pointRadius:3},
+               {type:'bar',label:'Found',data:wls.map(e=>e.found),backgroundColor:'rgba(21,128,61,.7)',borderRadius:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}},beginAtZero:true}}}
   });
-
-  document.querySelectorAll(".nav-button").forEach(function (button) {
-    button.dataset.active = button.dataset.section === sectionName ? "true" : "false";
+  const cats=stats.topCategories||[];
+  ST.charts.cat=new Chart(document.getElementById('catChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:cats.map(c=>c.category),datasets:[{data:cats.map(c=>c.count),backgroundColor:['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}}}}
   });
-
-  const panel = document.getElementById("section-" + sectionName);
-  if (panel) {
-    panel.classList.remove("hidden");
-  }
-}
-
-function safeText(value, fallback) {
-  const text = String(value || "").trim();
-  return text || fallback;
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
-
-  return date.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
-}
-
-function formatShortDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "--";
-  }
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric"
-  });
-}
-
-function createBadge(text, type) {
-  const badge = document.createElement("span");
-  badge.className = "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide";
-
-  if (type === "blocked") {
-    badge.classList.add("border-red-200", "bg-red-50", "text-red-700");
-  } else if (type === "active-user") {
-    badge.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-700");
-  } else if (type === "flagged") {
-    badge.classList.add("border-amber-200", "bg-amber-50", "text-amber-700");
-  } else {
-    const palette = STATUS_COLORS[type] || ["bg-slate-50", "text-slate-700", "border-slate-200"];
-    badge.classList.add(palette[0], palette[1], palette[2]);
-  }
-
-  badge.textContent = text;
-  return badge;
-}
-
-function clearElement(node) {
-  while (node.firstChild) {
-    node.removeChild(node.firstChild);
-  }
-}
-
-function createCell(text, className) {
-  const cell = document.createElement("td");
-  cell.className = className || "px-4 py-3 align-top text-sm text-slate-600";
-  cell.textContent = text;
-  return cell;
-}
-
-function createLoadingRow(columnCount, message) {
-  const row = document.createElement("tr");
-  const cell = document.createElement("td");
-  cell.colSpan = columnCount;
-  cell.className = "px-4 py-10 text-center text-sm font-medium text-slate-500";
-  cell.textContent = message || "Loading...";
-  row.appendChild(cell);
-  return row;
-}
-
-function createEmptyRow(columnCount, message) {
-  const row = document.createElement("tr");
-  const cell = document.createElement("td");
-  cell.colSpan = columnCount;
-  cell.className = "px-4 py-10 text-center text-sm text-slate-500";
-  cell.textContent = message;
-  row.appendChild(cell);
-  return row;
-}
-
-function createInfoCard(title, lineOne, lineTwo, badgeText, badgeType) {
-  const card = document.createElement("article");
-  card.className = "rounded-2xl border border-slate-200 bg-slate-50 p-4";
-
-  const topRow = document.createElement("div");
-  topRow.className = "flex items-start justify-between gap-3";
-
-  const titleElement = document.createElement("h4");
-  titleElement.className = "text-sm font-semibold text-[var(--ink)]";
-  titleElement.textContent = title;
-  topRow.appendChild(titleElement);
-
-  if (badgeText) {
-    topRow.appendChild(createBadge(badgeText, badgeType));
-  }
-
-  card.appendChild(topRow);
-
-  const firstLine = document.createElement("p");
-  firstLine.className = "mt-3 text-sm text-slate-600";
-  firstLine.textContent = lineOne;
-  card.appendChild(firstLine);
-
-  const secondLine = document.createElement("p");
-  secondLine.className = "mt-1 text-xs text-slate-500";
-  secondLine.textContent = lineTwo;
-  card.appendChild(secondLine);
-
-  return card;
-}
-
-function renderRecentCards(containerId, rows, kind) {
-  const container = document.getElementById(containerId);
-  clearElement(container);
-
-  if (!Array.isArray(rows) || rows.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500";
-    empty.textContent = "No records available.";
-    container.appendChild(empty);
-    return;
-  }
-
-  rows.forEach(function (row) {
-    if (kind === "user") {
-      container.appendChild(
-        createInfoCard(
-          safeText(row.name, "Unnamed user"),
-          safeText(row.email, "No email"),
-          safeText(row.mobile, "No mobile"),
-          row.isBlocked ? "Blocked" : safeText(row.role, "student"),
-          row.isBlocked ? "blocked" : "active-user"
-        )
-      );
-      return;
-    }
-
-    container.appendChild(
-      createInfoCard(
-        safeText(row.itemName, "Unnamed item"),
-        safeText(row.location, "Unknown location") + " • " + formatDate(row.date),
-        safeText(row.reporterName || row.email, "Anonymous"),
-        safeText(row.status || "active", "active"),
-        safeText(row.status || "active", "active")
-      )
-    );
+  const locs=stats.topLocations||[];
+  ST.charts.loc=new Chart(document.getElementById('locChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:locs.map(l=>l.location),datasets:[{data:locs.map(l=>l.count),backgroundColor:'rgba(15,52,96,.7)',borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10}}}}}
   });
 }
 
-function renderAvatar() {
-  const user = getCurrentUser();
-  const image = user && typeof user.profileImage === "string" ? user.profileImage.trim() : "";
-  const displayName = safeText(user && user.name, "Admin");
-  const displayEmail = safeText(user && user.email, "admin@findmystuff.local");
-
-  adminName.textContent = displayName;
-  adminEmail.textContent = displayEmail;
-  adminAvatarFallback.textContent = displayName.charAt(0).toUpperCase() || "A";
-
-  if (image) {
-    adminAvatar.src = image;
-    adminAvatar.classList.remove("hidden");
-    adminAvatarFallback.classList.add("hidden");
-    return;
-  }
-
-  adminAvatar.removeAttribute("src");
-  adminAvatar.classList.add("hidden");
-  adminAvatarFallback.classList.remove("hidden");
+/* ─── USERS ─── */
+async function loadUsers(){
+  const tbody=document.getElementById('usersTableBody');
+  tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">Loading...</td></tr>';
+  try{
+    const q=new URLSearchParams({page:ST.users.page,limit:ST.users.limit});
+    const data=await api('/admin/users?'+q);
+    ST.users.rows=data.users||[];
+    ST.users.pagination=data.pagination;
+    const total=data.pagination?.total||0;
+    const bid=document.getElementById('navBadgeUsers');
+    bid.textContent=total;bid.style.display=total>0?'inline':'none';
+    filterUsersLocal();
+    updatePager('users',data.pagination);
+  }catch(e){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#dc2626;">'+e.message+'</td></tr>';toast(e.message,'error');}
 }
 
-async function apiRequest(path, options) {
-  const token = getToken();
-  if (!token) {
-    redirectToLogin();
-    throw new Error("Unauthorized");
-  }
-
-  const settings = Object.assign({}, options || {});
-  const headers = Object.assign({}, settings.headers || {}, {
-    Authorization: "Bearer " + token
-  });
-
-  if (settings.body && !headers["Content-Type"]) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  settings.headers = headers;
-
-  const response = await fetch(API_BASE + path, settings);
-  const payload = await response.json().catch(function () {
-    return {};
-  });
-
-  if (response.status === 401) {
-    redirectToLogin();
-    throw new Error("Session expired");
-  }
-
-  if (!response.ok) {
-    throw new Error(payload.message || "Request failed");
-  }
-
-  return payload;
+function filterUsersLocal(){
+  const search=(document.getElementById('usersSearch').value||'').toLowerCase();
+  const role=document.getElementById('usersRoleFilter').value;
+  const status=document.getElementById('usersStatusFilter').value;
+  let rows=ST.users.rows;
+  if(search)rows=rows.filter(u=>(u.name||'').toLowerCase().includes(search)||(u.email||'').toLowerCase().includes(search));
+  if(role)rows=rows.filter(u=>u.role===role);
+  if(status==='blocked')rows=rows.filter(u=>u.isBlocked);
+  if(status==='active')rows=rows.filter(u=>!u.isBlocked);
+  renderUsersTable(rows);
 }
 
-function updatePageInfo(targetId, pagination) {
-  const label = document.getElementById(targetId);
-  if (!pagination) {
-    label.textContent = "Page 1 of 1";
-    return;
-  }
-
-  label.textContent = "Page " + pagination.page + " of " + pagination.totalPages + " • " + pagination.total + " result(s)";
+function renderUsersTable(rows){
+  const tbody=document.getElementById('usersTableBody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">No users found.</td></tr>';return;}
+  tbody.innerHTML=rows.map(u=>`
+    <tr>
+      <td><span style="font-weight:600;color:#0f172a;">${safeText(u.name,'—')}</span></td>
+      <td style="color:#475569;">${safeText(u.email,'—')}</td>
+      <td>${badge(u.role||'student',u.role==='admin'?'b-admin':'b-student')}</td>
+      <td style="color:#64748b;">${safeText(u.mobile,'—')}</td>
+      <td style="color:#64748b;">${fmt(u.createdAt)}</td>
+      <td>${u.isBlocked?badge('Blocked','b-blocked'):badge('Active','b-active')}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-sm b-ghost" onclick="viewUser(${JSON.stringify(u).replace(/"/g,'&quot;')})">View</button>
+          <button class="btn btn-sm ${u.isBlocked?'b-success':'b-warning'}" onclick="toggleBlock('${u._id}',${u.isBlocked})">${u.isBlocked?'Unblock':'Block'}</button>
+          <button class="btn btn-sm b-ghost" onclick="changeRole('${u._id}','${u.role||'student'}')">${u.role==='admin'?'→ Student':'→ Admin'}</button>
+          <button class="btn btn-sm b-danger" onclick="deleteUser('${u._id}','${(u.name||'').replace(/'/g,"\\'")}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
 }
 
-function updatePagerButtons(prefix, pagination) {
-  const prev = document.getElementById(prefix + "PrevBtn");
-  const next = document.getElementById(prefix + "NextBtn");
-  const hasPreviousPage = pagination && pagination.hasPreviousPage;
-  const hasNextPage = pagination && pagination.hasNextPage;
-  prev.disabled = !hasPreviousPage;
-  next.disabled = !hasNextPage;
-  prev.classList.toggle("opacity-50", !hasPreviousPage);
-  next.classList.toggle("opacity-50", !hasNextPage);
+async function toggleBlock(id,isBlocked){
+  const action=isBlocked?'Unblock':'Block';
+  if(!confirm(action+' this user?'))return;
+  try{
+    const data=await api('/admin/users/'+id+'/block',{method:'PUT',body:JSON.stringify({})});
+    toast(data.message,'success');
+    ST.users.rows=ST.users.rows.map(u=>u._id===id?data.user:u);
+    filterUsersLocal();
+  }catch(e){toast(e.message,'error');}
 }
 
-function populateCategoryFilter() {
-  const select = document.getElementById("itemsCategoryFilter");
-  const currentValue = state.items.category;
-  clearElement(select);
-
-  const baseOption = document.createElement("option");
-  baseOption.value = "";
-  baseOption.textContent = "All Categories";
-  select.appendChild(baseOption);
-
-  state.categories.forEach(function (category) {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    if (category === currentValue) {
-      option.selected = true;
-    }
-    select.appendChild(option);
-  });
+async function changeRole(id,currentRole){
+  const newRole=currentRole==='admin'?'student':'admin';
+  if(!confirm('Change role to '+newRole+'?'))return;
+  try{
+    const data=await api('/admin/users/'+id+'/role',{method:'PUT',body:JSON.stringify({role:newRole})});
+    toast(data.message,'success');
+    ST.users.rows=ST.users.rows.map(u=>u._id===id?data.user:u);
+    filterUsersLocal();
+  }catch(e){toast(e.message,'error');}
 }
 
-function syncCategoriesFromRows(rows) {
-  const merged = new Set(state.categories);
-  (rows || []).forEach(function (row) {
-    const category = safeText(row.category, "");
-    if (category) {
-      merged.add(category);
-    }
-  });
-  state.categories = Array.from(merged).sort(function (left, right) {
-    return left.localeCompare(right);
-  });
-  populateCategoryFilter();
+async function deleteUser(id,name){
+  if(!confirm('Permanently delete user "'+name+'"? This cannot be undone.'))return;
+  try{
+    await api('/admin/users/'+id,{method:'DELETE'});
+    toast('User deleted','success');
+    ST.users.rows=ST.users.rows.filter(u=>u._id!==id);
+    filterUsersLocal();
+  }catch(e){toast(e.message,'error');}
 }
 
-function renderOverviewCounts(counts, statusBreakdown) {
-  document.getElementById("statLost").textContent = String(counts && counts.lost || 0);
-  document.getElementById("statFound").textContent = String(counts && counts.found || 0);
-  document.getElementById("statUsers").textContent = String(counts && counts.users || 0);
-  document.getElementById("statResolved").textContent = String(statusBreakdown && statusBreakdown.resolved || counts && counts.resolved || 0);
+function viewUser(u){
+  document.getElementById('viewUserContent').innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <div style="width:56px;height:56px;border-radius:14px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#475569;overflow:hidden;flex-shrink:0;">
+        ${u.profileImage&&!u.profileImage.startsWith('data:')?`<img src="${u.profileImage}" style="width:100%;height:100%;object-fit:cover;">`:(u.name||'U')[0].toUpperCase()}
+      </div>
+      <div>
+        <p style="font-size:18px;font-weight:700;color:#0f172a;">${safeText(u.name,'—')}</p>
+        <p style="font-size:13px;color:#64748b;">${safeText(u.email,'—')}</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      ${field('Role',badge(u.role||'student',u.role==='admin'?'b-admin':'b-student'))}
+      ${field('Status',u.isBlocked?badge('Blocked','b-blocked'):badge('Active','b-active'))}
+      ${field('Mobile',safeText(u.mobile,'Not provided'))}
+      ${field('College ID',safeText(u.collegeId,'Not provided'))}
+      ${field('Joined',fmt(u.createdAt))}
+      ${u.isBlocked?field('Blocked At',fmt(u.blockedAt)):''}
+    </div>`;
+  openModal('viewUserModal');
+}
+function field(label,val){return`<div style="background:#f8fafc;border-radius:11px;padding:11px 13px;"><p style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">${label}</p><p style="font-size:13.5px;color:#0f172a;font-weight:500;">${val}</p></div>`;}
+
+function changeUsersPage(dir){
+  const pg=ST.users.pagination;
+  if(!pg)return;
+  if(dir>0&&!pg.hasNextPage)return;
+  if(dir<0&&!pg.hasPreviousPage)return;
+  ST.users.page+=dir;loadUsers();
 }
 
-function destroyChart(chartKey) {
-  if (state.charts[chartKey]) {
-    state.charts[chartKey].destroy();
-    state.charts[chartKey] = null;
-  }
+/* ─── ITEMS ─── */
+function debounceItems(){clearTimeout(ST.items.debTimer);ST.items.debTimer=setTimeout(()=>{ST.items.page=1;loadItems();},400);}
+
+async function loadItems(){
+  const tbody=document.getElementById('itemsTableBody');
+  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">Loading...</td></tr>';
+  const search=document.getElementById('itemsSearch').value.trim();
+  const type=document.getElementById('itemsTypeFilter').value;
+  const status=document.getElementById('itemsStatusFilter').value;
+  const category=document.getElementById('itemsCategoryFilter').value;
+  const q=new URLSearchParams({page:ST.items.page,limit:ST.items.limit});
+  if(search)q.set('search',search);if(type)q.set('type',type);if(status)q.set('status',status);if(category)q.set('category',category);
+  try{
+    const data=await api('/admin/items?'+q);
+    ST.items.rows=data.items||[];
+    ST.items.pagination=data.pagination;
+    syncCategoriesFromItems(ST.items.rows);
+    renderItemsTable(ST.items.rows);
+    updatePager('items',data.pagination);
+  }catch(e){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#dc2626;">'+e.message+'</td></tr>';toast(e.message,'error');}
 }
 
-function renderCharts(stats) {
-  destroyChart("weekly");
-  destroyChart("categories");
-  destroyChart("locations");
-
-  const weeklyContext = document.getElementById("weeklyActivityChart").getContext("2d");
-  const weeklyLabels = stats.weeklyActivity.map(function (entry) {
-    return formatShortDate(entry.date);
-  });
-
-  state.charts.weekly = new Chart(weeklyContext, {
-    type: "bar",
-    data: {
-      labels: weeklyLabels,
-      datasets: [
-        {
-          type: "line",
-          label: "Lost",
-          data: stats.weeklyActivity.map(function (entry) { return entry.lost; }),
-          borderColor: "#134074",
-          backgroundColor: "rgba(19, 64, 116, 0.18)",
-          tension: 0.35,
-          fill: true
-        },
-        {
-          type: "bar",
-          label: "Found",
-          data: stats.weeklyActivity.map(function (entry) { return entry.found; }),
-          backgroundColor: "#16a34a",
-          borderRadius: 10
-        }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "bottom"
-        }
-      },
-      scales: {
-        x: {
-          grid: {
-            display: false
-          }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0
-          }
-        }
-      }
-    }
-  });
-
-  const categoriesContext = document.getElementById("topCategoriesChart").getContext("2d");
-  state.charts.categories = new Chart(categoriesContext, {
-    type: "bar",
-    data: {
-      labels: stats.topCategories.map(function (entry) { return entry.category; }),
-      datasets: [
-        {
-          label: "Count",
-          data: stats.topCategories.map(function (entry) { return entry.count; }),
-          backgroundColor: "#f59e0b",
-          borderRadius: 10
-        }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      indexAxis: "y",
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0
-          }
-        },
-        y: {
-          grid: {
-            display: false
-          }
-        }
-      }
-    }
-  });
-
-  const locationsContext = document.getElementById("topLocationsChart").getContext("2d");
-  state.charts.locations = new Chart(locationsContext, {
-    type: "bar",
-    data: {
-      labels: stats.topLocations.map(function (entry) { return entry.location; }),
-      datasets: [
-        {
-          label: "Count",
-          data: stats.topLocations.map(function (entry) { return entry.count; }),
-          backgroundColor: "#0f766e",
-          borderRadius: 10
-        }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      indexAxis: "y",
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0
-          }
-        },
-        y: {
-          grid: {
-            display: false
-          }
-        }
-      }
-    }
-  });
+function syncCategoriesFromItems(rows){
+  rows.forEach(r=>{if(r.category&&!ST.categories.includes(r.category))ST.categories.push(r.category);});
+  const sel=document.getElementById('itemsCategoryFilter');
+  const cv=sel.value;
+  sel.innerHTML='<option value="">All Categories</option>'+[...new Set(ST.categories)].sort().map(c=>`<option value="${c}" ${c===cv?'selected':''}>${c}</option>`).join('');
 }
 
-function renderUsersTable() {
-  const body = document.getElementById("usersTableBody");
-  clearElement(body);
-
-  const searchValue = state.users.search.trim().toLowerCase();
-  const visibleRows = state.users.rows.filter(function (user) {
-    if (!searchValue) {
-      return true;
-    }
-
-    const haystack = (safeText(user.name, "") + " " + safeText(user.email, "")).toLowerCase();
-    return haystack.includes(searchValue);
-  });
-
-  if (!visibleRows.length) {
-    body.appendChild(createEmptyRow(6, "No users match the current filters."));
-    return;
-  }
-
-  visibleRows.forEach(function (user) {
-    const row = document.createElement("tr");
-    row.className = "hover:bg-slate-50";
-
-    row.appendChild(createCell(safeText(user.name, "Unnamed user"), "px-4 py-3 align-top font-semibold text-slate-800"));
-    row.appendChild(createCell(safeText(user.email, "-")));
-    row.appendChild(createCell(safeText(user.role, "student").toUpperCase()));
-    row.appendChild(createCell(safeText(user.mobile, "-")));
-
-    const statusCell = document.createElement("td");
-    statusCell.className = "px-4 py-3 align-top";
-    statusCell.appendChild(createBadge(user.isBlocked ? "Blocked" : "Active", user.isBlocked ? "blocked" : "active-user"));
-    row.appendChild(statusCell);
-
-    const actionsCell = document.createElement("td");
-    actionsCell.className = "px-4 py-3 align-top";
-
-    const actionsWrap = document.createElement("div");
-    actionsWrap.className = "flex flex-wrap items-center gap-2";
-
-    const blockButton = document.createElement("button");
-    blockButton.type = "button";
-    blockButton.className = user.isBlocked
-      ? "rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-      : "rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700";
-    blockButton.textContent = user.isBlocked ? "Unblock" : "Block";
-    blockButton.addEventListener("click", async function () {
-      try {
-        blockButton.disabled = true;
-        setStatus(usersStatus, "Updating user block status...", "info");
-        await apiRequest("/admin/users/" + encodeURIComponent(user._id) + "/block", {
-          method: "PUT"
-        });
-        await loadUsers();
-        setStatus(usersStatus, "User block status updated.", "success");
-      } catch (error) {
-        setStatus(usersStatus, error.message || "Could not update block status.", "error");
-      } finally {
-        blockButton.disabled = false;
-      }
-    });
-    actionsWrap.appendChild(blockButton);
-
-    const roleSelect = document.createElement("select");
-    roleSelect.className = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400";
-    ["student", "admin"].forEach(function (roleValue) {
-      const option = document.createElement("option");
-      option.value = roleValue;
-      option.textContent = roleValue.toUpperCase();
-      option.selected = safeText(user.role, "student") === roleValue;
-      roleSelect.appendChild(option);
-    });
-    roleSelect.addEventListener("change", async function () {
-      try {
-        roleSelect.disabled = true;
-        setStatus(usersStatus, "Updating user role...", "info");
-        await apiRequest("/admin/users/" + encodeURIComponent(user._id) + "/role", {
-          method: "PUT",
-          body: JSON.stringify({ role: roleSelect.value })
-        });
-        await loadUsers();
-        setStatus(usersStatus, "User role updated.", "success");
-      } catch (error) {
-        roleSelect.value = safeText(user.role, "student");
-        setStatus(usersStatus, error.message || "Could not update user role.", "error");
-      } finally {
-        roleSelect.disabled = false;
-      }
-    });
-    actionsWrap.appendChild(roleSelect);
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50";
-    deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", async function () {
-      const confirmed = window.confirm("Delete this user account?");
-      if (!confirmed) {
-        return;
-      }
-
-      try {
-        deleteButton.disabled = true;
-        setStatus(usersStatus, "Deleting user...", "info");
-        await apiRequest("/admin/users/" + encodeURIComponent(user._id), {
-          method: "DELETE"
-        });
-        await Promise.all([loadUsers(), loadOverview()]);
-        setStatus(usersStatus, "User deleted successfully.", "success");
-      } catch (error) {
-        setStatus(usersStatus, error.message || "Could not delete user.", "error");
-      } finally {
-        deleteButton.disabled = false;
-      }
-    });
-    actionsWrap.appendChild(deleteButton);
-
-    actionsCell.appendChild(actionsWrap);
-    row.appendChild(actionsCell);
-    body.appendChild(row);
-  });
+function renderItemsTable(rows){
+  const tbody=document.getElementById('itemsTableBody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No items found.</td></tr>';return;}
+  tbody.innerHTML=rows.map(item=>`
+    <tr>
+      <td><span style="font-weight:600;color:#0f172a;max-width:140px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeText(item.itemName,'')}">${safeText(item.itemName,'—')}</span></td>
+      <td>${badge(item.type||'lost',item.type==='found'?'b-found':'b-lost')}</td>
+      <td style="color:#64748b;">${safeText(item.category,'—')}</td>
+      <td style="color:#64748b;">${safeText(item.location,'—')}</td>
+      <td style="color:#64748b;">${fmt(item.date)}</td>
+      <td>${statusBadge(item.status)}</td>
+      <td style="color:#64748b;">${safeText(item.reporterName||item.email,'—')}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${item.status!=='resolved'?`<button class="btn btn-sm b-success" onclick="setItemStatus('${item._id}','resolved')">✓ Resolve</button>`:''}
+          ${item.status==='active'?`<button class="btn btn-sm b-danger" onclick="setItemStatus('${item._id}','rejected')">✕ Reject</button>`:''}
+          ${item.status!=='active'?`<button class="btn btn-sm b-ghost" onclick="setItemStatus('${item._id}','active')">Re-activate</button>`:''}
+          <button class="btn btn-sm b-warning" onclick="openEditItem(${JSON.stringify(item).replace(/"/g,'&quot;')})">Edit</button>
+          ${item.flagged?`<button class="btn btn-sm b-ghost" onclick="toggleFlag('${item._id}',false)">Unflag</button>`:`<button class="btn btn-sm" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;" onclick="toggleFlag('${item._id}',true)">Flag</button>`}
+          <button class="btn btn-sm b-danger" onclick="deleteItem('${item._id}','${(item.itemName||'').replace(/'/g,"\\'")}')">Del</button>
+        </div>
+      </td>
+    </tr>`).join('');
 }
 
-function createStatusSelect(item, sectionStatusTarget, reloadCallback) {
-  const select = document.createElement("select");
-  select.className = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400";
-  ["active", "resolved", "rejected"].forEach(function (statusValue) {
-    const option = document.createElement("option");
-    option.value = statusValue;
-    option.textContent = statusValue.toUpperCase();
-    option.selected = safeText(item.status, "active") === statusValue;
-    select.appendChild(option);
-  });
-
-  select.addEventListener("change", async function () {
-    try {
-      select.disabled = true;
-      setStatus(sectionStatusTarget, "Updating item status...", "info");
-      await apiRequest("/admin/items/" + encodeURIComponent(item._id) + "/status", {
-        method: "PUT",
-        body: JSON.stringify({ status: select.value })
-      });
-      await Promise.all([reloadCallback(), loadOverview(), loadStats()]);
-      setStatus(sectionStatusTarget, "Item status updated.", "success");
-    } catch (error) {
-      select.value = safeText(item.status, "active");
-      setStatus(sectionStatusTarget, error.message || "Could not update item status.", "error");
-    } finally {
-      select.disabled = false;
-    }
-  });
-
-  return select;
+async function setItemStatus(id,status){
+  try{
+    const data=await api('/admin/items/'+id+'/status',{method:'PUT',body:JSON.stringify({status})});
+    toast(data.message||'Status updated','success');
+    ST.items.rows=ST.items.rows.map(i=>i._id===id?{...i,status}:i);
+    renderItemsTable(ST.items.rows);
+  }catch(e){toast(e.message,'error');}
 }
 
-function renderItemsTable(rows, bodyId, sectionStatusTarget, options) {
-  const body = document.getElementById(bodyId);
-  clearElement(body);
-  const settings = Object.assign({ flaggedView: false }, options || {});
-
-  if (!Array.isArray(rows) || !rows.length) {
-    body.appendChild(createEmptyRow(settings.flaggedView ? 6 : 8, settings.flaggedView ? "No flagged items found." : "No items match the current filters."));
-    return;
-  }
-
-  rows.forEach(function (item) {
-    const row = document.createElement("tr");
-    row.className = "hover:bg-slate-50";
-
-    row.appendChild(createCell(safeText(item.itemName, "Unnamed item"), "px-4 py-3 align-top font-semibold text-slate-800"));
-    row.appendChild(createCell(safeText(item.type, "-").toUpperCase()));
-
-    if (settings.flaggedView) {
-      row.appendChild(createCell(safeText(item.location, "Unknown location")));
-      row.appendChild(createCell(safeText(item.flagReason, "No reason provided")));
-
-      const flaggedStatusCell = document.createElement("td");
-      flaggedStatusCell.className = "px-4 py-3 align-top";
-      flaggedStatusCell.appendChild(createBadge(safeText(item.status, "active"), safeText(item.status, "active")));
-      row.appendChild(flaggedStatusCell);
-    } else {
-      row.appendChild(createCell(safeText(item.category, "Other")));
-      row.appendChild(createCell(safeText(item.location, "Unknown location")));
-      row.appendChild(createCell(formatDate(item.date)));
-
-      const statusCell = document.createElement("td");
-      statusCell.className = "px-4 py-3 align-top";
-      statusCell.appendChild(createBadge(safeText(item.status, "active"), safeText(item.status, "active")));
-      row.appendChild(statusCell);
-
-      row.appendChild(createCell(safeText(item.reporterName || item.email, "Anonymous")));
-    }
-
-    const actionsCell = document.createElement("td");
-    actionsCell.className = "px-4 py-3 align-top";
-    const actionsWrap = document.createElement("div");
-    actionsWrap.className = "flex flex-wrap items-center gap-2";
-
-    if (!settings.flaggedView) {
-      actionsWrap.appendChild(createStatusSelect(item, sectionStatusTarget, loadItems));
-
-      const flagButton = document.createElement("button");
-      flagButton.type = "button";
-      flagButton.className = item.flagged
-        ? "rounded-xl border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
-        : "rounded-xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600";
-      flagButton.textContent = item.flagged ? "Unflag" : "Flag";
-      flagButton.addEventListener("click", async function () {
-        let flagReason = safeText(item.flagReason, "");
-        const nextFlaggedValue = !item.flagged;
-
-        if (nextFlaggedValue) {
-          const prompted = window.prompt("Enter a reason for flagging this item:", flagReason);
-          if (prompted === null) {
-            return;
-          }
-          flagReason = prompted.trim();
-        }
-
-        try {
-          flagButton.disabled = true;
-          setStatus(sectionStatusTarget, nextFlaggedValue ? "Flagging item..." : "Removing flag...", "info");
-          await apiRequest("/admin/items/" + encodeURIComponent(item._id) + "/flag", {
-            method: "PUT",
-            body: JSON.stringify({
-              flagged: nextFlaggedValue,
-              flagReason: flagReason
-            })
-          });
-          await Promise.all([loadItems(), loadFlagged(), loadOverview(), loadStats()]);
-          setStatus(sectionStatusTarget, nextFlaggedValue ? "Item flagged successfully." : "Item unflagged successfully.", "success");
-        } catch (error) {
-          setStatus(sectionStatusTarget, error.message || "Could not update flag state.", "error");
-        } finally {
-          flagButton.disabled = false;
-        }
-      });
-      actionsWrap.appendChild(flagButton);
-    } else {
-      const unflagButton = document.createElement("button");
-      unflagButton.type = "button";
-      unflagButton.className = "rounded-xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600";
-      unflagButton.textContent = "Unflag";
-      unflagButton.addEventListener("click", async function () {
-        try {
-          unflagButton.disabled = true;
-          setStatus(sectionStatusTarget, "Removing flag...", "info");
-          await apiRequest("/admin/items/" + encodeURIComponent(item._id) + "/flag", {
-            method: "PUT",
-            body: JSON.stringify({
-              flagged: false,
-              flagReason: ""
-            })
-          });
-          await Promise.all([loadFlagged(), loadItems(), loadOverview(), loadStats()]);
-          setStatus(sectionStatusTarget, "Item unflagged successfully.", "success");
-        } catch (error) {
-          setStatus(sectionStatusTarget, error.message || "Could not unflag item.", "error");
-        } finally {
-          unflagButton.disabled = false;
-        }
-      });
-      actionsWrap.appendChild(unflagButton);
-    }
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50";
-    deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", async function () {
-      const confirmed = window.confirm("Delete this item report?");
-      if (!confirmed) {
-        return;
-      }
-
-      try {
-        deleteButton.disabled = true;
-        setStatus(sectionStatusTarget, "Deleting item...", "info");
-        await apiRequest("/admin/items/" + encodeURIComponent(item._id), {
-          method: "DELETE"
-        });
-        await Promise.all([loadItems(), loadFlagged(), loadOverview(), loadStats()]);
-        setStatus(sectionStatusTarget, "Item deleted successfully.", "success");
-      } catch (error) {
-        setStatus(sectionStatusTarget, error.message || "Could not delete item.", "error");
-      } finally {
-        deleteButton.disabled = false;
-      }
-    });
-    actionsWrap.appendChild(deleteButton);
-
-    actionsCell.appendChild(actionsWrap);
-    row.appendChild(actionsCell);
-    body.appendChild(row);
-  });
+async function toggleFlag(id,flagged,reason=''){
+  try{
+    const data=await api('/admin/items/'+id+'/flag',{method:'PUT',body:JSON.stringify({flagged,flagReason:reason})});
+    toast(data.message,'success');
+    ST.items.rows=ST.items.rows.map(i=>i._id===id?{...i,flagged,flagReason:reason}:i);
+    renderItemsTable(ST.items.rows);
+  }catch(e){toast(e.message,'error');}
 }
 
-async function loadOverview() {
-  setStatus(dashboardStatus, "Loading overview data...", "info");
-  const result = await apiRequest("/admin/overview");
-  renderOverviewCounts(result.counts || {}, null);
-  renderRecentCards("recentLostList", result.lostItems || [], "item");
-  renderRecentCards("recentFoundList", result.foundItems || [], "item");
-  renderRecentCards("recentUsersList", result.users || [], "user");
-  setStatus(dashboardStatus, "Overview synced successfully.", "success");
+async function deleteItem(id,name){
+  if(!confirm('Delete item "'+name+'"? This cannot be undone.'))return;
+  try{
+    await api('/admin/items/'+id,{method:'DELETE'});
+    toast('Item deleted','success');
+    ST.items.rows=ST.items.rows.filter(i=>i._id!==id);
+    renderItemsTable(ST.items.rows);
+  }catch(e){toast(e.message,'error');}
 }
 
-async function loadStats() {
-  const result = await apiRequest("/admin/stats");
-  renderOverviewCounts(null, result.statusBreakdown || {});
-  renderCharts({
-    weeklyActivity: Array.isArray(result.weeklyActivity) ? result.weeklyActivity : [],
-    topCategories: Array.isArray(result.topCategories) ? result.topCategories : [],
-    topLocations: Array.isArray(result.topLocations) ? result.topLocations : [],
-    statusBreakdown: result.statusBreakdown || {}
-  });
-  syncCategoriesFromRows((result.topCategories || []).map(function (entry) {
-    return { category: entry.category };
-  }));
+function openEditItem(item){
+  document.getElementById('editItemId').value=item._id;
+  document.getElementById('editItemName').value=item.itemName||'';
+  document.getElementById('editItemDesc').value=item.description||'';
+  document.getElementById('editItemCategory').value=item.category||'';
+  document.getElementById('editItemLocation').value=item.location||'';
+  openModal('editItemModal');
 }
 
-async function loadUsers() {
-  const body = document.getElementById("usersTableBody");
-  clearElement(body);
-  body.appendChild(createLoadingRow(6, "Loading users..."));
-  setStatus(usersStatus, "Fetching users...", "info");
-
-  const query = new URLSearchParams({
-    page: String(state.users.page),
-    limit: String(state.users.limit)
-  });
-
-  if (state.users.role) {
-    query.set("role", state.users.role);
-  }
-
-  const result = await apiRequest("/admin/users?" + query.toString());
-  state.users.rows = Array.isArray(result.users) ? result.users : [];
-  state.users.pagination = result.pagination || null;
-  renderUsersTable();
-  updatePageInfo("usersPageInfo", state.users.pagination);
-  updatePagerButtons("users", state.users.pagination);
-  setStatus(usersStatus, "Users loaded successfully.", "success");
+async function submitEditItem(){
+  const id=document.getElementById('editItemId').value;
+  const body={itemName:document.getElementById('editItemName').value.trim(),description:document.getElementById('editItemDesc').value.trim(),category:document.getElementById('editItemCategory').value.trim(),location:document.getElementById('editItemLocation').value.trim()};
+  if(!body.itemName){toast('Item name is required','warning');return;}
+  try{
+    const data=await api('/admin/items/'+id,{method:'PUT',body:JSON.stringify(body)});
+    toast('Item updated successfully','success');
+    closeModal('editItemModal');
+    ST.items.rows=ST.items.rows.map(i=>i._id===id?{...i,...body}:i);
+    renderItemsTable(ST.items.rows);
+  }catch(e){toast(e.message,'error');}
 }
 
-async function loadItems() {
-  const body = document.getElementById("itemsTableBody");
-  clearElement(body);
-  body.appendChild(createLoadingRow(8, "Loading items..."));
-  setStatus(itemsStatusBox, "Fetching items...", "info");
-
-  const query = new URLSearchParams({
-    page: String(state.items.page),
-    limit: String(state.items.limit)
-  });
-
-  if (state.items.type) {
-    query.set("type", state.items.type);
-  }
-
-  if (state.items.status) {
-    query.set("status", state.items.status);
-  }
-
-  if (state.items.category) {
-    query.set("category", state.items.category);
-  }
-
-  if (state.items.search) {
-    query.set("search", state.items.search);
-  }
-
-  const result = await apiRequest("/admin/items?" + query.toString());
-  state.items.rows = Array.isArray(result.items) ? result.items : [];
-  state.items.pagination = result.pagination || null;
-  syncCategoriesFromRows(state.items.rows);
-  renderItemsTable(state.items.rows, "itemsTableBody", itemsStatusBox, { flaggedView: false });
-  updatePageInfo("itemsPageInfo", state.items.pagination);
-  updatePagerButtons("items", state.items.pagination);
-  setStatus(itemsStatusBox, "Items loaded successfully.", "success");
+function changeItemsPage(dir){
+  const pg=ST.items.pagination;
+  if(!pg)return;
+  if(dir>0&&!pg.hasNextPage)return;
+  if(dir<0&&!pg.hasPreviousPage)return;
+  ST.items.page+=dir;loadItems();
 }
 
-async function loadFlagged() {
-  const body = document.getElementById("flaggedTableBody");
-  clearElement(body);
-  body.appendChild(createLoadingRow(6, "Loading flagged items..."));
-  setStatus(flaggedStatus, "Fetching flagged content...", "info");
-
-  const query = new URLSearchParams({
-    page: String(state.flagged.page),
-    limit: String(state.flagged.limit),
-    flagged: "true"
-  });
-
-  const result = await apiRequest("/admin/items?" + query.toString());
-  state.flagged.rows = Array.isArray(result.items) ? result.items : [];
-  state.flagged.pagination = result.pagination || null;
-  renderItemsTable(state.flagged.rows, "flaggedTableBody", flaggedStatus, { flaggedView: true });
-  updatePageInfo("flaggedPageInfo", state.flagged.pagination);
-  updatePagerButtons("flagged", state.flagged.pagination);
-  setStatus(flaggedStatus, "Flagged content loaded successfully.", "success");
+/* ─── FLAGGED ─── */
+async function loadFlagged(){
+  const tbody=document.getElementById('flaggedTableBody');
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px;color:#94a3b8;">Loading...</td></tr>';
+  const q=new URLSearchParams({page:ST.flagged.page,limit:ST.flagged.limit,flagged:'true'});
+  try{
+    const data=await api('/admin/items?'+q);
+    ST.flagged.rows=data.items||[];
+    ST.flagged.pagination=data.pagination;
+    const b=document.getElementById('navBadgeFlagged');
+    const t=data.pagination?.total||0;
+    b.textContent=t;b.style.display=t>0?'inline':'none';
+    renderFlaggedTable(ST.flagged.rows);
+    updatePager('flagged',data.pagination);
+  }catch(e){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px;color:#dc2626;">'+e.message+'</td></tr>';toast(e.message,'error');}
 }
 
-async function loadAllData() {
-  if (!ensureAdminSession()) {
-    return;
-  }
-
-  renderAvatar();
-  setStatus(globalStatus, "Loading admin workspace...", "info");
-
-  try {
-    await Promise.all([
-      loadOverview(),
-      loadStats(),
-      loadUsers(),
-      loadItems(),
-      loadFlagged()
-    ]);
-    setStatus(globalStatus, "All admin data is up to date.", "success");
-  } catch (error) {
-    setStatus(globalStatus, error.message || "Could not load admin data.", "error");
-  }
+function renderFlaggedTable(rows){
+  const tbody=document.getElementById('flaggedTableBody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px;color:#94a3b8;">No flagged items. 🎉</td></tr>';return;}
+  tbody.innerHTML=rows.map(item=>`
+    <tr>
+      <td><span style="font-weight:600;color:#0f172a;">${safeText(item.itemName,'—')}</span></td>
+      <td>${badge(item.type||'lost',item.type==='found'?'b-found':'b-lost')}</td>
+      <td style="color:#64748b;">${safeText(item.location,'—')}</td>
+      <td><span style="font-size:12px;color:#b45309;">${safeText(item.flagReason,'No reason given')}</span></td>
+      <td>${statusBadge(item.status)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-sm b-success" onclick="unflagItem('${item._id}')">Unflag</button>
+          <button class="btn btn-sm b-danger" onclick="deleteFlaggedItem('${item._id}','${(item.itemName||'').replace(/'/g,"\\'")}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
 }
 
-function attachEventListeners() {
-  document.querySelectorAll(".nav-button").forEach(function (button) {
-    button.addEventListener("click", function () {
-      setActiveSection(button.dataset.section);
-    });
-  });
-
-  document.getElementById("adminLogoutBtn").addEventListener("click", function () {
-    redirectToLogin();
-  });
-
-  document.getElementById("refreshAllBtn").addEventListener("click", function () {
-    loadAllData();
-  });
-
-  document.getElementById("usersSearchInput").addEventListener("input", function (event) {
-    state.users.search = event.target.value;
-    renderUsersTable();
-  });
-
-  document.getElementById("usersRoleFilter").addEventListener("change", async function (event) {
-    state.users.role = event.target.value;
-    state.users.page = 1;
-    try {
-      await loadUsers();
-    } catch (error) {
-      setStatus(usersStatus, error.message || "Could not filter users.", "error");
-    }
-  });
-
-  document.getElementById("usersReloadBtn").addEventListener("click", function () {
-    loadUsers().catch(function (error) {
-      setStatus(usersStatus, error.message || "Could not reload users.", "error");
-    });
-  });
-
-  document.getElementById("usersPrevBtn").addEventListener("click", function () {
-    if (state.users.pagination && state.users.pagination.hasPreviousPage) {
-      state.users.page -= 1;
-      loadUsers().catch(function (error) {
-        setStatus(usersStatus, error.message || "Could not load previous page.", "error");
-      });
-    }
-  });
-
-  document.getElementById("usersNextBtn").addEventListener("click", function () {
-    if (state.users.pagination && state.users.pagination.hasNextPage) {
-      state.users.page += 1;
-      loadUsers().catch(function (error) {
-        setStatus(usersStatus, error.message || "Could not load next page.", "error");
-      });
-    }
-  });
-
-  document.getElementById("itemsApplyBtn").addEventListener("click", function () {
-    state.items.search = document.getElementById("itemsSearchInput").value.trim();
-    state.items.type = document.getElementById("itemsTypeFilter").value;
-    state.items.status = document.getElementById("itemsStatusFilter").value;
-    state.items.category = document.getElementById("itemsCategoryFilter").value;
-    state.items.page = 1;
-    loadItems().catch(function (error) {
-      setStatus(itemsStatusBox, error.message || "Could not apply item filters.", "error");
-    });
-  });
-
-  document.getElementById("itemsPrevBtn").addEventListener("click", function () {
-    if (state.items.pagination && state.items.pagination.hasPreviousPage) {
-      state.items.page -= 1;
-      loadItems().catch(function (error) {
-        setStatus(itemsStatusBox, error.message || "Could not load previous page.", "error");
-      });
-    }
-  });
-
-  document.getElementById("itemsNextBtn").addEventListener("click", function () {
-    if (state.items.pagination && state.items.pagination.hasNextPage) {
-      state.items.page += 1;
-      loadItems().catch(function (error) {
-        setStatus(itemsStatusBox, error.message || "Could not load next page.", "error");
-      });
-    }
-  });
-
-  document.getElementById("flaggedReloadBtn").addEventListener("click", function () {
-    loadFlagged().catch(function (error) {
-      setStatus(flaggedStatus, error.message || "Could not reload flagged items.", "error");
-    });
-  });
-
-  document.getElementById("flaggedPrevBtn").addEventListener("click", function () {
-    if (state.flagged.pagination && state.flagged.pagination.hasPreviousPage) {
-      state.flagged.page -= 1;
-      loadFlagged().catch(function (error) {
-        setStatus(flaggedStatus, error.message || "Could not load previous page.", "error");
-      });
-    }
-  });
-
-  document.getElementById("flaggedNextBtn").addEventListener("click", function () {
-    if (state.flagged.pagination && state.flagged.pagination.hasNextPage) {
-      state.flagged.page += 1;
-      loadFlagged().catch(function (error) {
-        setStatus(flaggedStatus, error.message || "Could not load next page.", "error");
-      });
-    }
-  });
+async function unflagItem(id){
+  try{
+    const data=await api('/admin/items/'+id+'/flag',{method:'PUT',body:JSON.stringify({flagged:false})});
+    toast(data.message,'success');
+    ST.flagged.rows=ST.flagged.rows.filter(i=>i._id!==id);
+    renderFlaggedTable(ST.flagged.rows);
+    const b=document.getElementById('navBadgeFlagged');
+    const n=ST.flagged.rows.length;b.textContent=n;b.style.display=n>0?'inline':'none';
+  }catch(e){toast(e.message,'error');}
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  attachEventListeners();
-  loadAllData();
+async function deleteFlaggedItem(id,name){
+  if(!confirm('Delete "'+name+'"?'))return;
+  try{
+    await api('/admin/items/'+id,{method:'DELETE'});
+    toast('Item deleted','success');
+    ST.flagged.rows=ST.flagged.rows.filter(i=>i._id!==id);
+    renderFlaggedTable(ST.flagged.rows);
+  }catch(e){toast(e.message,'error');}
+}
+
+function changeFlaggedPage(dir){
+  const pg=ST.flagged.pagination;
+  if(!pg)return;
+  if(dir>0&&!pg.hasNextPage)return;
+  if(dir<0&&!pg.hasPreviousPage)return;
+  ST.flagged.page+=dir;loadFlagged();
+}
+
+/* ─── PAGINATION ─── */
+function updatePager(prefix,pg){
+  const info=document.getElementById(prefix+'PageInfo');
+  const prev=document.getElementById(prefix+'Prev');
+  const next=document.getElementById(prefix+'Next');
+  if(!pg){if(info)info.textContent='—';return;}
+  if(info)info.textContent='Page '+pg.page+' of '+pg.totalPages+' · '+pg.total+' total';
+  if(prev){prev.disabled=!pg.hasPreviousPage;prev.style.opacity=pg.hasPreviousPage?'1':'.45';}
+  if(next){next.disabled=!pg.hasNextPage;next.style.opacity=pg.hasNextPage?'1':'.45';}
+}
+
+/* ─── ANNOUNCEMENTS ─── */
+const ANN_KEY='lf_admin_announcements';
+function getAnnouncements(){try{return JSON.parse(localStorage.getItem(ANN_KEY)||'[]');}catch(e){return[];}}
+function saveAnnouncements(arr){localStorage.setItem(ANN_KEY,JSON.stringify(arr));}
+
+function sendAnnouncement(){
+  const title=document.getElementById('annTitle').value.trim();
+  const message=document.getElementById('annMessage').value.trim();
+  const priority=document.getElementById('annPriority').value;
+  if(!title||!message){toast('Title and message are required','warning');return;}
+  const ann={id:Date.now(),title,message,priority,sentAt:new Date().toISOString(),sentBy:getCurrentUser()?.name||'Admin'};
+  const list=getAnnouncements();
+  list.unshift(ann);saveAnnouncements(list.slice(0,50));
+  document.getElementById('annTitle').value='';
+  document.getElementById('annMessage').value='';
+  renderAnnouncements();
+  toast('Announcement sent and logged!','success');
+}
+
+function renderAnnouncements(){
+  const log=document.getElementById('annLog');
+  const list=getAnnouncements();
+  if(!list.length){log.innerHTML='<p style="font-size:13px;color:#94a3b8;text-align:center;padding:24px;">No announcements yet. Send one using the form.</p>';return;}
+  log.innerHTML=list.map(a=>`
+    <div class="ann-card ann-${a.priority}" style="position:relative;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div>
+          <p style="font-size:13.5px;font-weight:700;color:#0f172a;">${a.title}</p>
+          <p style="font-size:12.5px;color:#475569;margin-top:3px;">${a.message}</p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:6px;">By ${a.sentBy} · ${fmt(a.sentAt)}</p>
+        </div>
+        <button onclick="deleteAnn(${a.id})" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function deleteAnn(id){
+  saveAnnouncements(getAnnouncements().filter(a=>a.id!==id));
+  renderAnnouncements();
+}
+
+function clearAnnouncements(){
+  if(!confirm('Clear all announcements?'))return;
+  localStorage.removeItem(ANN_KEY);renderAnnouncements();
+}
+
+/* ─── SETTINGS ─── */
+const CAT_KEY='lf_admin_categories';
+const LOC_KEY='lf_admin_locations';
+const TOG_KEY='lf_admin_toggles';
+
+const DEFAULT_CATS=['Wallet','Mobile Phone','Keys','ID Card','Bag','Electronics','Watch','Laptop','Headphones','Other'];
+const DEFAULT_LOCS=['Library','Cafeteria','Hostel','Parking Area','Classroom','Auditorium','Lab','Sports Ground','Reception'];
+
+function getCats(){try{return JSON.parse(localStorage.getItem(CAT_KEY)||'null')||[...DEFAULT_CATS];}catch(e){return[...DEFAULT_CATS];}}
+function getLocs(){try{return JSON.parse(localStorage.getItem(LOC_KEY)||'null')||[...DEFAULT_LOCS];}catch(e){return[...DEFAULT_LOCS];}}
+function getToggles(){try{return JSON.parse(localStorage.getItem(TOG_KEY)||'null')||{guest:true,contact:true,signup:true,email:false};}catch(e){return{guest:true,contact:true,signup:true,email:false};}}
+
+function saveCats(arr){localStorage.setItem(CAT_KEY,JSON.stringify(arr));}
+function saveLocs(arr){localStorage.setItem(LOC_KEY,JSON.stringify(arr));}
+function saveToggle(key,val){const t=getToggles();t[key]=val;localStorage.setItem(TOG_KEY,JSON.stringify(t));}
+
+function addCategory(){
+  const inp=document.getElementById('newCategoryInput');
+  const val=inp.value.trim();
+  if(!val){toast('Enter a category name','warning');return;}
+  const cats=getCats();
+  if(cats.some(c=>c.toLowerCase()===val.toLowerCase())){toast('Category already exists','warning');return;}
+  cats.push(val);saveCats(cats);inp.value='';renderCategories();toast('Category added','success');
+}
+function removeCategory(cat){
+  const cats=getCats().filter(c=>c!==cat);saveCats(cats);renderCategories();toast('Category removed','info');
+}
+function renderCategories(){
+  const el=document.getElementById('categoriesList');
+  el.innerHTML=getCats().map(c=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
+    ${c}
+    <button onclick="removeCategory('${c.replace(/'/g,"\\'")}') " style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
+  </li>`).join('');
+}
+
+function addLocation(){
+  const inp=document.getElementById('newLocationInput');
+  const val=inp.value.trim();
+  if(!val){toast('Enter a location name','warning');return;}
+  const locs=getLocs();
+  if(locs.some(l=>l.toLowerCase()===val.toLowerCase())){toast('Location already exists','warning');return;}
+  locs.push(val);saveLocs(locs);inp.value='';renderLocations();toast('Location added','success');
+}
+function removeLocation(loc){
+  const locs=getLocs().filter(l=>l!==loc);saveLocs(locs);renderLocations();toast('Location removed','info');
+}
+function renderLocations(){
+  const el=document.getElementById('locationsList');
+  el.innerHTML=getLocs().map(l=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
+    ${l}
+    <button onclick="removeLocation('${l.replace(/'/g,"\\'")}') " style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
+  </li>`).join('');
+}
+
+function renderSettings(){
+  renderCategories();renderLocations();
+  const t=getToggles();
+  Object.entries(t).forEach(([k,v])=>{const el=document.getElementById('tog-'+k);if(el)el.checked=v;});
+}
+
+/* ─── RESPONSIVE ─── */
+function checkMobile(){
+  const hb=document.getElementById('hamburger');
+  if(window.innerWidth<=768)hb.style.display='flex';
+  else{hb.style.display='none';document.body.classList.remove('sidebar-open');document.getElementById('sidebarOverlay').classList.remove('on');}
+}
+
+/* ─── INIT ─── */
+document.addEventListener('DOMContentLoaded',function(){
+  if(!ensureAdmin())return;
+  renderAdminProfile();
+  startClock();
+  loadDashboard();
+  checkMobile();
+  window.addEventListener('resize',checkMobile);
+
+  // Modal backdrop close
+  document.getElementById('editItemModal').addEventListener('click',function(e){if(e.target===this)closeModal('editItemModal');});
+  document.getElementById('viewUserModal').addEventListener('click',function(e){if(e.target===this)closeModal('viewUserModal');});
 });
 </script>
 </body>
