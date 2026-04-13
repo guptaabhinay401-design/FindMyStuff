@@ -5,7 +5,7 @@ const Item = require("../models/Item");
 const LostItem = require("../models/LostItem");
 const authMiddleware = require("../middleware/authMiddleware");
 
-const ITEM_LIST_FIELDS = "itemName category description type location date reporterName email imageThumb contactPublic possession createdAt status flagged flagReason";
+const ITEM_LIST_FIELDS = "itemName category description type location date reporterName imageThumb contactPublic possession createdAt status flagged flagReason";
 
 function toSafeDate(value) {
   if (!value) {

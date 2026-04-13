@@ -240,9 +240,9 @@ function renderResults(items) {
 
     const action = document.createElement("button");
     action.type = "button";
-    action.className = "rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50";
+    action.className = "rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition";
     action.textContent = item.type === "found" ? "Claim Item" : "View Report";
-    footer.appendChild(action);
+    action.addEventListener("click", function () { openItemModal(item); });
 
     card.appendChild(preview);
     card.appendChild(title);
@@ -335,7 +335,23 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   searchForm.itemType.value = defaultType;
-  runSearch();
+  runSearch().then(function() {
+    // If itemId param present, auto-open that item's modal after search loads
+    var itemIdParam = queryParams.get("itemId");
+    if (itemIdParam && /^[a-f0-9]{24}$/i.test(itemIdParam)) {
+      // Fetch item directly and open modal
+      var headers = {};
+      var tk = localStorage.getItem("lf_auth_token");
+      if (tk) headers["Authorization"] = "Bearer " + tk;
+      var apiBase = (window.LFAuth && window.LFAuth.API_BASE) || "https://findmystuff-backend-d16m.onrender.com/api";
+      fetch(apiBase + "/items/" + itemIdParam, { headers })
+        .then(function(r) { return r.json(); })
+        .then(function(item) {
+          if (item && item.itemName) openItemModal(item);
+        })
+        .catch(function() {});
+    }
+  });
 
   if (liveParam) {
     liveTimerId = setInterval(runSearch, 30000);
@@ -347,6 +363,293 @@ window.addEventListener("beforeunload", function () {
     clearInterval(liveTimerId);
   }
 });
+
+/* ========================================================
+   ITEM DETAIL MODAL + CLAIM SYSTEM
+   ======================================================== */
+
+const API_BASE_URL = (window.LFAuth && window.LFAuth.API_BASE) || "https://findmystuff-backend-d16m.onrender.com/api";
+let _currentModalItemId = null;
+
+function fmtModal(v) {
+  const d = new Date(v);
+  return isNaN(d) ? "—" : d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function safeStr(v, fb) {
+  const t = String(v || "").trim();
+  return t || (fb || "—");
+}
+
+function openItemModal(item) {
+  _currentModalItemId = item.id || item._id || null;
+  const backdrop = document.getElementById("itemModalBackdrop");
+
+  // Reset state
+  document.getElementById("claimFormWrap").style.display = "none";
+  document.getElementById("claimBtnWrap").style.display = "block";
+  document.getElementById("claimSuccessWrap").style.display = "none";
+  document.getElementById("claimStatus").style.display = "none";
+  document.getElementById("claimMessage").value = "";
+  document.getElementById("claimPhone").value = "";
+  document.getElementById("claimEmail").value = "";
+
+  // Populate from existing item data immediately
+  document.getElementById("itemModalTitle").textContent = safeStr(item.itemName, "Unnamed Item");
+  document.getElementById("itemModalMeta").textContent = safeStr(item.location, "Unknown") + " · " + fmtModal(item.date);
+  document.getElementById("itemModalCategory").textContent = safeStr(item.category, "Other");
+  document.getElementById("itemModalLocation").textContent = safeStr(item.location);
+  document.getElementById("itemModalDate").textContent = fmtModal(item.date);
+  document.getElementById("itemModalDesc").textContent = safeStr(item.description, "No description provided.");
+  document.getElementById("itemModalReporter").textContent = safeStr(item.reporterName, "Anonymous");
+
+  // Status badge
+  const statusEl = document.getElementById("itemModalStatus");
+  const statusMap = { active: ["#eff6ff","#1d4ed8"], resolved: ["#f0fdf4","#15803d"], rejected: ["#fef2f2","#dc2626"] };
+  const statusColors = statusMap[item.status] || statusMap.active;
+  statusEl.textContent = item.status || "active";
+  statusEl.style.background = statusColors[0];
+  statusEl.style.color = statusColors[1];
+
+  // Type badge
+  const typeBadge = document.getElementById("itemModalTypeBadge");
+  typeBadge.innerHTML = item.type === "found"
+    ? '<span style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Found Item</span>'
+    : '<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;">Lost Report</span>';
+
+  // Image
+  const imgInner = document.getElementById("itemModalImgInner");
+  const imgSrc = item.image || item.fullImage || item.imageThumb || "";
+  if (imgSrc) {
+    imgInner.innerHTML = '<img src="' + imgSrc + '" alt="Item photo" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'No Photo\'">';
+  } else {
+    imgInner.textContent = "No Photo";
+  }
+
+  // Contact
+  document.getElementById("itemModalContact").style.display = "none";
+
+  // Open modal
+  backdrop.style.display = "block";
+  document.body.style.overflow = "hidden";
+
+  // Fetch rich details from API if we have a valid ID
+  if (_currentModalItemId && /^[a-f0-9]{24}$/i.test(String(_currentModalItemId))) {
+    fetchAndEnrichModal(_currentModalItemId);
+  }
+}
+
+function closeItemModal(event) {
+  if (event && event.target !== document.getElementById("itemModalBackdrop") && event.type !== "click") {
+    return;
+  }
+  document.getElementById("itemModalBackdrop").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+async function fetchAndEnrichModal(itemId) {
+  document.getElementById("itemModalLoading").style.display = "block";
+  try {
+    const headers = {};
+    const tk = localStorage.getItem("lf_auth_token");
+    if (tk) headers["Authorization"] = "Bearer " + tk;
+    const res = await fetch(API_BASE_URL + "/items/" + itemId, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Update reporter with populated data
+    if (data.reportedBy && data.reportedBy.name) {
+      document.getElementById("itemModalReporter").textContent = data.reportedBy.name;
+    }
+
+    // Show contact info if public
+    if (data.contactPublic && (data.email || data.phone)) {
+      const parts = [];
+      if (data.phone) parts.push("📞 " + data.phone);
+      if (data.email) parts.push("✉ " + data.email);
+      document.getElementById("itemModalContactText").textContent = parts.join("  ·  ");
+      document.getElementById("itemModalContact").style.display = "block";
+    }
+
+    // Update image if better version available
+    if (data.image && data.image !== document.getElementById("itemModalImgInner").querySelector("img")?.src) {
+      document.getElementById("itemModalImgInner").innerHTML =
+        '<img src="' + data.image + '" alt="Item photo" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'No Photo\'">';
+    }
+  } catch (e) {
+    // Silently fail — modal still works with existing card data
+  } finally {
+    document.getElementById("itemModalLoading").style.display = "none";
+  }
+}
+
+function handleClaimClick() {
+  const tk = localStorage.getItem("lf_auth_token");
+  if (!tk) {
+    document.getElementById("claimLoginHint").style.display = "block";
+    return;
+  }
+  toggleClaimForm(true);
+}
+
+function toggleClaimForm(show) {
+  document.getElementById("claimFormWrap").style.display = show ? "block" : "none";
+  document.getElementById("claimBtnWrap").style.display = show ? "none" : "block";
+  document.getElementById("claimStatus").style.display = "none";
+}
+
+async function submitClaim() {
+  const message = document.getElementById("claimMessage").value.trim();
+  if (!message) {
+    showClaimStatus("Please describe your proof or reason for claiming this item.", "error");
+    return;
+  }
+  if (!_currentModalItemId || !/^[a-f0-9]{24}$/i.test(String(_currentModalItemId))) {
+    showClaimStatus("This item cannot be claimed online. Please contact the admin directly.", "error");
+    return;
+  }
+
+  const btn = document.getElementById("submitClaimBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  try {
+    const tk = localStorage.getItem("lf_auth_token");
+    const res = await fetch(API_BASE_URL + "/claims", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + (tk || "")
+      },
+      body: JSON.stringify({
+        itemId: _currentModalItemId,
+        claimMessage: message,
+        contactPhone: document.getElementById("claimPhone").value.trim(),
+        contactEmail: document.getElementById("claimEmail").value.trim()
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Failed to submit claim");
+
+    document.getElementById("claimFormWrap").style.display = "none";
+    document.getElementById("claimSuccessWrap").style.display = "block";
+    document.getElementById("claimBtnWrap").style.display = "none";
+  } catch (e) {
+    showClaimStatus(e.message || "Could not submit claim. Please try again.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Submit Claim";
+  }
+}
+
+function showClaimStatus(msg, type) {
+  const el = document.getElementById("claimStatus");
+  el.textContent = msg;
+  el.style.display = "block";
+  if (type === "error") {
+    el.style.background = "#fef2f2";
+    el.style.border = "1px solid #fecaca";
+    el.style.color = "#dc2626";
+  } else {
+    el.style.background = "#f0fdf4";
+    el.style.border = "1px solid #bbf7d0";
+    el.style.color = "#15803d";
+  }
+}
 </script>
+<!-- ===== VIEW REPORT MODAL ===== -->
+<div id="itemModalBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);backdrop-filter:blur(5px);z-index:900;overflow-y:auto;padding:20px;" onclick="closeItemModal(event)">
+  <div id="itemModalBox" onclick="event.stopPropagation()" style="background:#fff;border-radius:22px;width:100%;max-width:580px;margin:auto;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.22);animation:modalIn .22s ease;">
+    <!-- Image header -->
+    <div id="itemModalImg" style="height:200px;background:#f1f5f9;position:relative;overflow:hidden;">
+      <div id="itemModalImgInner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;">No Photo</div>
+      <button onclick="closeItemModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.4);border:none;color:#fff;border-radius:9px;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+      <div id="itemModalTypeBadge" style="position:absolute;top:12px;left:12px;"></div>
+    </div>
+    <!-- Content -->
+    <div style="padding:22px 24px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
+        <div>
+          <h2 id="itemModalTitle" style="font-size:1.25rem;font-weight:700;color:#0f172a;">Item Name</h2>
+          <p id="itemModalMeta" style="font-size:13px;color:#64748b;margin-top:4px;"></p>
+        </div>
+        <span id="itemModalStatus" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;"></span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:#f8fafc;border-radius:11px;padding:11px 13px;">
+          <p style="font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Category</p>
+          <p id="itemModalCategory" style="font-size:13.5px;font-weight:600;color:#0f172a;">—</p>
+        </div>
+        <div style="background:#f8fafc;border-radius:11px;padding:11px 13px;">
+          <p style="font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Location</p>
+          <p id="itemModalLocation" style="font-size:13.5px;font-weight:600;color:#0f172a;">—</p>
+        </div>
+        <div style="background:#f8fafc;border-radius:11px;padding:11px 13px;">
+          <p style="font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Date</p>
+          <p id="itemModalDate" style="font-size:13.5px;font-weight:600;color:#0f172a;">—</p>
+        </div>
+        <div style="background:#f8fafc;border-radius:11px;padding:11px 13px;">
+          <p style="font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Reported By</p>
+          <p id="itemModalReporter" style="font-size:13.5px;font-weight:600;color:#0f172a;">—</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Description</p>
+        <p id="itemModalDesc" style="font-size:13.5px;color:#334155;line-height:1.65;">—</p>
+      </div>
+
+      <!-- Contact info (shown only if contactPublic) -->
+      <div id="itemModalContact" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+        <p style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Contact Info</p>
+        <p id="itemModalContactText" style="font-size:13px;color:#1e40af;"></p>
+      </div>
+
+      <!-- Loading state -->
+      <div id="itemModalLoading" style="display:none;text-align:center;padding:10px;color:#64748b;font-size:13px;">Loading details...</div>
+
+      <!-- Claim section -->
+      <div id="itemModalClaimSection" style="border-top:1px solid #f1f5f9;padding-top:16px;margin-top:4px;">
+        <div id="claimFormWrap" style="display:none;">
+          <h3 style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">Submit a Claim</h3>
+          <div id="claimStatus" style="display:none;padding:9px 13px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:12px;"></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">Your Message / Proof *</label>
+              <textarea id="claimMessage" rows="3" placeholder="Describe how this item belongs to you, any identifying marks or proof..." style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;resize:vertical;outline:none;background:#fafbfc;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">Contact Phone</label>
+                <input id="claimPhone" type="tel" placeholder="Your phone number" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fafbfc;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">Contact Email</label>
+                <input id="claimEmail" type="email" placeholder="Your email" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;background:#fafbfc;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button onclick="toggleClaimForm(false)" style="padding:8px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+              <button id="submitClaimBtn" onclick="submitClaim()" style="padding:8px 18px;border-radius:10px;border:none;background:#0f3460;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#1a4a7a'" onmouseout="this.style.background='#0f3460'">Submit Claim</button>
+            </div>
+          </div>
+        </div>
+        <div id="claimBtnWrap" style="text-align:center;">
+          <button id="openClaimFormBtn" onclick="handleClaimClick()" style="padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#0f3460,#1d4ed8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">Claim This Item</button>
+          <p id="claimLoginHint" style="display:none;font-size:12.5px;color:#64748b;margin-top:8px;">Please <a href="login.html" style="color:#2563eb;font-weight:600;">login</a> to submit a claim.</p>
+        </div>
+        <div id="claimSuccessWrap" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;text-align:center;">
+          <p style="font-size:14px;font-weight:700;color:#15803d;">✓ Claim Submitted!</p>
+          <p style="font-size:12.5px;color:#16a34a;margin-top:4px;">An admin will review your claim and contact you shortly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(12px);}to{opacity:1;transform:scale(1) translateY(0);}}
+</style>
 </body>
 </html>

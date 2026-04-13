@@ -152,6 +152,11 @@ textarea.inp{resize:vertical;min-height:80px;}
         Flagged Content
         <span id="navBadgeFlagged" style="margin-left:auto;font-size:11px;background:rgba(252,165,165,.25);color:#fca5a5;padding:1px 7px;border-radius:999px;display:none;"></span>
       </button>
+      <button class="nav-item" data-sec="claims" onclick="switchSection('claims',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+        Claims
+        <span id="navBadgeClaims" style="margin-left:auto;font-size:11px;background:rgba(252,165,165,.25);color:#fca5a5;padding:1px 7px;border-radius:999px;display:none;"></span>
+      </button>
       <button class="nav-item" data-sec="announcements" onclick="switchSection('announcements',this)">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Announcements
@@ -413,7 +418,42 @@ textarea.inp{resize:vertical;min-height:80px;}
     </div>
   </section>
 
+  <!-- ===== SECTION: CLAIMS ===== -->
+  <section id="section-claims" class="section-panel hidden">
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;">
+        <div>
+          <p style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;">Claim Verification</p>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:3px;">All Claims</h3>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <select id="claimsStatusFilter" class="inp" style="width:160px;" onchange="loadClaims()">
+            <option value="">All Statuses</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="approved">✓ Approved</option>
+            <option value="rejected">✕ Rejected</option>
+          </select>
+          <button class="btn b-primary btn-sm" onclick="loadClaims()">Reload</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr><th>Item</th><th>Type</th><th>Claimed By</th><th>Contact</th><th>Claim Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="claimsTableBody"><tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <p id="claimsPageInfo" style="font-size:12.5px;color:#64748b;">—</p>
+        <div style="display:flex;gap:8px;">
+          <button id="claimsPrev" class="btn b-ghost btn-sm" onclick="changeClaimsPage(-1)">← Prev</button>
+          <button id="claimsNext" class="btn b-ghost btn-sm" onclick="changeClaimsPage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== SECTION: ANNOUNCEMENTS ===== -->
+
   <section id="section-announcements" class="section-panel hidden">
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:18px;">
       <!-- Send form -->
@@ -573,7 +613,8 @@ const ST = {
   categories:[],
   users:{page:1,limit:20,rows:[],filtered:[],pagination:null},
   items:{page:1,limit:20,rows:[],pagination:null,debTimer:null},
-  flagged:{page:1,limit:20,rows:[],pagination:null}
+  flagged:{page:1,limit:20,rows:[],pagination:null},
+  claims:{page:1,limit:20,rows:[],pagination:null}
 };
 
 /* ─── UTILS ─── */
@@ -643,6 +684,7 @@ function switchSection(name,btn){
   if(name==='users'&&ST.users.rows.length===0)loadUsers();
   if(name==='items'&&ST.items.rows.length===0)loadItems();
   if(name==='flagged'&&ST.flagged.rows.length===0)loadFlagged();
+  if(name==='claims'&&ST.claims.rows.length===0)loadClaims();
   if(name==='announcements')renderAnnouncements();
   if(name==='settings')renderSettings();
 }
@@ -1167,6 +1209,91 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('editItemModal').addEventListener('click',function(e){if(e.target===this)closeModal('editItemModal');});
   document.getElementById('viewUserModal').addEventListener('click',function(e){if(e.target===this)closeModal('viewUserModal');});
 });
+/* ─── CLAIMS ─── */
+async function loadClaims(){
+  const tbody=document.getElementById('claimsTableBody');
+  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">Loading...</td></tr>';
+  const status=document.getElementById('claimsStatusFilter').value;
+  const q=new URLSearchParams({page:ST.claims.page,limit:ST.claims.limit});
+  if(status)q.set('status',status);
+  try{
+    const data=await api('/claims?'+q);
+    ST.claims.rows=data.claims||[];
+    ST.claims.pagination=data.pagination;
+    const t=data.pagination?.total||0;
+    const pendingCount=(data.claims||[]).filter(c=>c.status==='pending').length;
+    const b=document.getElementById('navBadgeClaims');
+    if(b){b.textContent=pendingCount||t;b.style.display=(pendingCount||t)>0?'inline':'none';}
+    renderClaimsTable(ST.claims.rows);
+    updatePager('claims',data.pagination);
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#dc2626;">'+e.message+'</td></tr>';
+    toast(e.message,'error');
+  }
+}
+
+function renderClaimsTable(rows){
+  const tbody=document.getElementById('claimsTableBody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No claims found.</td></tr>';return;}
+  const claimBadge={pending:'background:#fffbeb;color:#b45309;border:1px solid #fde68a;',approved:'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;',rejected:'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;'};
+  tbody.innerHTML=rows.map(c=>{
+    const item=c.itemId||{};
+    const user=c.claimedBy||{};
+    const bs=claimBadge[c.status]||claimBadge.pending;
+    const contact=[user.email?'✉ '+user.email:'',user.mobile?'📞 '+user.mobile:'',c.contactPhone?'📱 '+c.contactPhone:'',c.contactEmail?c.contactEmail:''].filter(Boolean).join(', ');
+    const msg=safeText(c.claimMessage,'—');
+    return`<tr>
+      <td><span style="font-weight:600;color:#0f172a;">${safeText(item.itemName,'—')}</span></td>
+      <td>${badge(item.type||'—',item.type==='found'?'b-found':'b-lost')}</td>
+      <td><div><p style="font-weight:600;font-size:13px;">${safeText(user.name,'—')}</p><p style="font-size:11.5px;color:#64748b;">${safeText(user.email,'—')}</p></div></td>
+      <td style="font-size:12px;color:#64748b;max-width:140px;">${contact||'—'}</td>
+      <td style="max-width:200px;"><span style="font-size:12.5px;color:#334155;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${msg}">${msg}</span>${c.adminNote?`<span style="font-size:11px;color:#64748b;display:block;margin-top:2px;">Note: ${c.adminNote}</span>`:''}</td>
+      <td style="color:#64748b;">${fmt(c.createdAt)}</td>
+      <td><span class="badge" style="${bs}">${c.status}</span></td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${c.status!=='approved'?`<button class="btn btn-sm b-success" onclick="updateClaim('${c._id}','approved')">✓ Approve</button>`:''}
+          ${c.status!=='rejected'?`<button class="btn btn-sm b-danger" onclick="updateClaim('${c._id}','rejected')">✕ Reject</button>`:''}
+          ${c.status!=='pending'?`<button class="btn btn-sm b-ghost" onclick="updateClaim('${c._id}','pending')">Reset</button>`:''}
+          <button class="btn btn-sm b-danger" onclick="deleteClaim('${c._id}')">Del</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateClaim(id,status){
+  const noteMsg=status==='rejected'?prompt('Reason for rejection (optional):'):null;
+  try{
+    const data=await api('/claims/'+id+'/status',{method:'PUT',body:JSON.stringify({status,adminNote:noteMsg||''})});
+    toast(data.message||'Claim updated','success');
+    ST.claims.rows=ST.claims.rows.map(c=>c._id===id?{...c,status,adminNote:noteMsg||c.adminNote}:c);
+    renderClaimsTable(ST.claims.rows);
+    // Update badge
+    const pendingCount=ST.claims.rows.filter(c=>c.status==='pending').length;
+    const b=document.getElementById('navBadgeClaims');
+    if(b){b.textContent=pendingCount;b.style.display=pendingCount>0?'inline':'none';}
+  }catch(e){toast(e.message,'error');}
+}
+
+async function deleteClaim(id){
+  if(!confirm('Delete this claim?'))return;
+  try{
+    await api('/claims/'+id,{method:'DELETE'});
+    toast('Claim deleted','success');
+    ST.claims.rows=ST.claims.rows.filter(c=>c._id!==id);
+    renderClaimsTable(ST.claims.rows);
+  }catch(e){toast(e.message,'error');}
+}
+
+function changeClaimsPage(dir){
+  const pg=ST.claims.pagination;
+  if(!pg)return;
+  if(dir>0&&!pg.hasNextPage)return;
+  if(dir<0&&!pg.hasPreviousPage)return;
+  ST.claims.page+=dir;loadClaims();
+}
+
 </script>
 </body>
 </html>

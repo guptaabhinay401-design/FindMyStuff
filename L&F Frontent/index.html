@@ -843,6 +843,19 @@
           body.appendChild(title);
           body.appendChild(meta);
           body.appendChild(description);
+
+          // "View Report" button
+          var itemId = item.id || item._id || "";
+          if (itemId && /^[a-f0-9]{24}$/i.test(String(itemId))) {
+            var viewBtn = document.createElement("a");
+            viewBtn.href = "search.html?itemId=" + itemId;
+            viewBtn.textContent = "View Report →";
+            viewBtn.style.cssText = "display:inline-block;margin-top:10px;font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;border:1px solid #bfdbfe;border-radius:8px;padding:4px 11px;background:#eff6ff;transition:background .15s;";
+            viewBtn.onmouseover = function() { this.style.background = "#dbeafe"; };
+            viewBtn.onmouseout = function() { this.style.background = "#eff6ff"; };
+            body.appendChild(viewBtn);
+          }
+
           card.appendChild(preview);
           card.appendChild(body);
           fragment.appendChild(card);

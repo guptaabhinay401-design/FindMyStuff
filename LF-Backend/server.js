@@ -12,6 +12,7 @@ const itemRoutes = require("./routes/item");
 const lostItemRoutes = require("./routes/lostItems");
 const foundItemRoutes = require("./routes/foundItems");
 const adminRoutes = require("./routes/admin");
+const claimsRoutes = require("./routes/claims");
 
 // Create express app
 const app = express();
@@ -91,6 +92,10 @@ app.use("/api/found-items", foundItemRoutes);
 // Admin routes
 // Example: /api/admin/overview
 app.use("/api/admin", adminRoutes);
+
+// Claims routes
+// Example: /api/claims
+app.use("/api/claims", claimsRoutes);
 
 
 // ================================
