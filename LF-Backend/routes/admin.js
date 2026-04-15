@@ -5,8 +5,8 @@ const Item = require("../models/Item");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 
-const ADMIN_OVERVIEW_ITEM_FIELDS = "itemName type category location date reporterName email status flagged flagReason createdAt";
-const ADMIN_ITEM_LIST_FIELDS = "itemName description type category location date reporterName phone email status flagged flagReason contactPublic possession reportedBy createdAt";
+const ADMIN_OVERVIEW_ITEM_FIELDS = "itemName type category location date reporterName email status flagged flagReason createdAt imageThumb image";
+const ADMIN_ITEM_LIST_FIELDS = "itemName description type category location date reporterName phone email status flagged flagReason contactPublic possession reportedBy createdAt imageThumb image";
 const ADMIN_USER_FIELDS = "name email mobile collegeId profileImage role isBlocked blockedAt createdAt";
 const ITEM_STATUS_VALUES = new Set(["active", "resolved", "rejected"]);
 const USER_ROLE_VALUES = new Set(["student", "admin"]);

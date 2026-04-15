@@ -749,8 +749,16 @@ function renderRecentList(containerId,rows,kind){
         <div><p style="font-size:13px;font-weight:600;color:#0f172a;">${safeText(r.name,'Unnamed')}</p><p style="font-size:11.5px;color:#94a3b8;">${safeText(r.email,'—')}</p></div>
         ${r.isBlocked?badge('Blocked','b-blocked'):badge(r.role||'student',r.role==='admin'?'b-admin':'b-student')}
       </div>`;}
+    
+    // Check if image exists
+    const imgSrc = r.imageThumb || r.image;
+    const imgHtml = imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#cbd5e1;"><svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`;
+
     return`<div style="padding:10px 12px;background:#f8fafc;border-radius:11px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;">
-      <div><p style="font-size:13px;font-weight:600;color:#0f172a;">${safeText(r.itemName,'Unnamed item')}</p><p style="font-size:11.5px;color:#94a3b8;">${safeText(r.location,'—')} · ${fmt(r.date)}</p></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;overflow:hidden;flex-shrink:0;">${imgHtml}</div>
+        <div><p style="font-size:13px;font-weight:600;color:#0f172a;">${safeText(r.itemName,'Unnamed item')}</p><p style="font-size:11.5px;color:#94a3b8;">${safeText(r.location,'—')} · ${fmt(r.date)}</p></div>
+      </div>
       ${statusBadge(r.status)}
     </div>`;
   }).join('');
@@ -927,9 +935,17 @@ function syncCategoriesFromItems(rows){
 function renderItemsTable(rows){
   const tbody=document.getElementById('itemsTableBody');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No items found.</td></tr>';return;}
-  tbody.innerHTML=rows.map(item=>`
-    <tr>
-      <td><span style="font-weight:600;color:#0f172a;max-width:140px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeText(item.itemName,'')}">${safeText(item.itemName,'—')}</span></td>
+  tbody.innerHTML=rows.map(item=>{
+    const imgSrc = item.imageThumb || item.image;
+    const imgHtml = imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#cbd5e1;"><svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`;
+    
+    return`<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:34px;border-radius:6px;background:#f1f5f9;border:1px solid #e2e8f0;overflow:hidden;flex-shrink:0;">${imgHtml}</div>
+          <span style="font-weight:600;color:#0f172a;max-width:140px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeText(item.itemName,'')}">${safeText(item.itemName,'—')}</span>
+        </div>
+      </td>
       <td>${badge(item.type||'lost',item.type==='found'?'b-found':'b-lost')}</td>
       <td style="color:#64748b;">${safeText(item.category,'—')}</td>
       <td style="color:#64748b;">${safeText(item.location,'—')}</td>
@@ -946,7 +962,8 @@ function renderItemsTable(rows){
           <button class="btn btn-sm b-danger" onclick="deleteItem('${item._id}','${(item.itemName||'').replace(/'/g,"\\'")}')">Del</button>
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 async function setItemStatus(id,status){
