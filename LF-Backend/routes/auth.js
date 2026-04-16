@@ -497,6 +497,44 @@ router.put("/profile", authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/auth/my-activity — returns current user's items + claims
+router.get("/my-activity", authMiddleware, async (req, res) => {
+    try {
+        const Item = require("../models/Item");
+        const Claim = require("../models/Claim");
+        const userId = req.user.id;
+
+        const [lostItems, foundItems, claims] = await Promise.all([
+            Item.find({ reportedBy: userId, type: "lost" })
+                .sort({ createdAt: -1 })
+                .limit(10)
+                .select("itemName location date status createdAt imageThumb category")
+                .lean(),
+            Item.find({ reportedBy: userId, type: "found" })
+                .sort({ createdAt: -1 })
+                .limit(10)
+                .select("itemName location date status createdAt imageThumb category")
+                .lean(),
+            Claim.find({ claimedBy: userId })
+                .sort({ createdAt: -1 })
+                .limit(10)
+                .populate("itemId", "itemName type status location")
+                .lean()
+        ]);
+
+        const stats = {
+            totalLost: await Item.countDocuments({ reportedBy: userId, type: "lost" }),
+            totalFound: await Item.countDocuments({ reportedBy: userId, type: "found" }),
+            totalClaims: await Claim.countDocuments({ claimedBy: userId }),
+            returned: await Item.countDocuments({ reportedBy: userId, status: "resolved" })
+        };
+
+        res.json({ lostItems, foundItems, claims, stats });
+    } catch (error) {
+        res.status(500).json({ message: "Could not load activity" });
+    }
+});
+
 router.put("/change-password", authMiddleware, async (req, res) => {
     try {
         const currentPassword = String(req.body.currentPassword || "");
