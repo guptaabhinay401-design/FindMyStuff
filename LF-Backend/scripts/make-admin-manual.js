@@ -7,7 +7,7 @@ const User = require("../models/User");
 const ADMIN_DETAILS = {
   name: "Abhinay Gupta",
   email: "guptaabhinay401@gmail.com",
-  password: "@password_example05",
+  password: "FindMyStuff2408",
   mobile: "8439108465"
 };
 

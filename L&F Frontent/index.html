@@ -339,6 +339,7 @@
       align-items: center;
       justify-content: center;
       background: linear-gradient(140deg, #edf4fb, #dbeaf8);
+      position: relative;
     }
 
     .item-preview img {
@@ -397,6 +398,54 @@
       border: 1px solid #f2c8c8;
       background: #fff4f4;
       color: #8a2b2b;
+    }
+
+    /* ── Skeleton shimmer ── */
+    .skel-card {
+      background: #fff;
+      border: 1px solid #deebf7;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(7,24,40,.08);
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+      pointer-events: none;
+    }
+    .skel-img {
+      height: 130px;
+      background: linear-gradient(90deg,#e8edf3 25%,#d7e1ec 50%,#e8edf3 75%);
+      background-size: 300% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    .skel-body {
+      padding: .82rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .skel-line {
+      border-radius: 6px;
+      background: linear-gradient(90deg,#e8edf3 25%,#d7e1ec 50%,#e8edf3 75%);
+      background-size: 300% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Lazy image fade-in ── */
+    .item-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+    .item-preview img.img-loaded {
+      opacity: 1;
     }
 
     footer {
@@ -797,62 +846,113 @@
         return text || fallback;
       }
 
+      /* ── IntersectionObserver lazy loader for homepage cards ── */
+      var _imgObserver = null;
+      function getLazyObserver() {
+        if (_imgObserver) return _imgObserver;
+        _imgObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (!entry.isIntersecting) return;
+            var img = entry.target;
+            var src = img.getAttribute('data-src');
+            if (!src) { _imgObserver.unobserve(img); return; }
+            img.src = src;
+            img.addEventListener('load', function() {
+              img.classList.add('img-loaded');
+            }, { once: true });
+            img.addEventListener('error', function() {
+              img.parentNode.innerHTML = '<span class="item-fallback">No Photo</span>';
+            }, { once: true });
+            _imgObserver.unobserve(img);
+          });
+        }, { rootMargin: '120px' });
+        return _imgObserver;
+      }
+
+      function renderSkeletons(count) {
+        recentItemsContainer.innerHTML = '';
+        var frag = document.createDocumentFragment();
+        for (var s = 0; s < count; s++) {
+          var sk = document.createElement('div');
+          sk.className = 'skel-card';
+          sk.innerHTML = '<div class="skel-img"></div>' +
+            '<div class="skel-body">' +
+              '<div class="skel-line" style="height:14px;width:75%;"></div>' +
+              '<div class="skel-line" style="height:11px;width:55%;"></div>' +
+              '<div class="skel-line" style="height:11px;width:90%;"></div>' +
+            '</div>';
+          frag.appendChild(sk);
+        }
+        recentItemsContainer.appendChild(frag);
+      }
+
       function renderRecentItems(items) {
-        recentItemsContainer.innerHTML = "";
+        recentItemsContainer.innerHTML = '';
 
         if (!Array.isArray(items) || items.length === 0) {
           recentItemsContainer.innerHTML = '<div class="state-card">No recent lost items found right now.</div>';
           return;
         }
 
+        var observer = getLazyObserver();
         var fragment = document.createDocumentFragment();
         items.forEach(function (item) {
-          var card = document.createElement("article");
-          var preview = document.createElement("div");
-          var body = document.createElement("div");
-          var title = document.createElement("h3");
-          var meta = document.createElement("p");
-          var description = document.createElement("p");
-          var imageSrc = getSafeText(item.image || item.fullImage, "");
+          var card = document.createElement('article');
+          var preview = document.createElement('div');
+          var body = document.createElement('div');
+          var title = document.createElement('h3');
+          var meta = document.createElement('p');
+          var description = document.createElement('p');
+          var imageSrc = getSafeText(item.imageThumb || item.image || item.fullImage, '');
 
-          card.className = "item-card";
-          preview.className = "item-preview";
-          body.className = "item-body";
-          meta.className = "item-meta";
-          description.className = "item-description";
+          card.className = 'item-card';
+          preview.className = 'item-preview';
+          body.className = 'item-body';
+          meta.className = 'item-meta';
+          description.className = 'item-description';
 
           if (imageSrc) {
-            var img = document.createElement("img");
-            img.src = imageSrc;
-            img.alt = getSafeText(item.itemName, "Item") + " photo";
-            img.loading = "lazy";
-            img.addEventListener("error", (function (previewNode) {
-              return function () {
-                previewNode.innerHTML = '<span class="item-fallback">No Photo</span>';
-              };
-            })(preview));
+            /* Shimmer placeholder — replaced by real img via IntersectionObserver */
+            preview.innerHTML = '<div class="skel-img" style="height:100%;width:100%;border-radius:0;"></div>';
+            var img = document.createElement('img');
+            img.setAttribute('data-src', imageSrc);
+            img.alt = getSafeText(item.itemName, 'Item') + ' photo';
+            img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;';
+            /* Swap shimmer for img element, then observe */
+            preview.style.position = 'relative';
             preview.appendChild(img);
+            observer.observe(img);
+
+            img.addEventListener('load', function() {
+              var skel = preview.querySelector('.skel-img');
+              if (skel) skel.remove();
+              img.style.opacity = '1';
+            }, { once: true });
+
+            img.addEventListener('error', function() {
+              preview.innerHTML = '<span class="item-fallback">No Photo</span>';
+            }, { once: true });
           } else {
             preview.innerHTML = '<span class="item-fallback">No Photo</span>';
           }
 
-          title.textContent = getSafeText(item.itemName, "Unnamed item");
-          meta.textContent = getSafeText(item.location, "Unknown location") + " | " + formatDate(item.date);
-          description.textContent = getSafeText(item.description, "No description provided.");
+          title.textContent = getSafeText(item.itemName, 'Unnamed item');
+          meta.textContent = getSafeText(item.location, 'Unknown location') + ' | ' + formatDate(item.date);
+          description.textContent = getSafeText(item.description, 'No description provided.');
 
           body.appendChild(title);
           body.appendChild(meta);
           body.appendChild(description);
 
           // "View Report" button
-          var itemId = item.id || item._id || "";
+          var itemId = item.id || item._id || '';
           if (itemId && /^[a-f0-9]{24}$/i.test(String(itemId))) {
-            var viewBtn = document.createElement("a");
-            viewBtn.href = "search.html?itemId=" + itemId;
-            viewBtn.textContent = "View Report →";
-            viewBtn.style.cssText = "display:inline-block;margin-top:10px;font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;border:1px solid #bfdbfe;border-radius:8px;padding:4px 11px;background:#eff6ff;transition:background .15s;";
-            viewBtn.onmouseover = function() { this.style.background = "#dbeafe"; };
-            viewBtn.onmouseout = function() { this.style.background = "#eff6ff"; };
+            var viewBtn = document.createElement('a');
+            viewBtn.href = 'search.html?itemId=' + itemId;
+            viewBtn.textContent = 'View Report →';
+            viewBtn.style.cssText = 'display:inline-block;margin-top:10px;font-size:12px;font-weight:600;color:#1d4ed8;text-decoration:none;border:1px solid #bfdbfe;border-radius:8px;padding:4px 11px;background:#eff6ff;transition:background .15s;';
+            viewBtn.onmouseover = function() { this.style.background = '#dbeafe'; };
+            viewBtn.onmouseout  = function() { this.style.background = '#eff6ff'; };
             body.appendChild(viewBtn);
           }
 
@@ -865,20 +965,21 @@
       }
 
       async function loadRecentItems() {
-        if (!recentItemsContainer) {
-          return;
-        }
+        if (!recentItemsContainer) return;
 
-        if (!window.LFStore || typeof window.LFStore.fetchRecentLostItems !== "function") {
+        if (!window.LFStore || typeof window.LFStore.fetchRecentLostItems !== 'function') {
           recentItemsContainer.innerHTML = '<div class="state-card error-card">Data store not loaded. Please refresh the page.</div>';
           return;
         }
+
+        /* Show 4 skeleton cards immediately — text data renders fast */
+        renderSkeletons(4);
 
         try {
           var items = await window.LFStore.fetchRecentLostItems(10);
           renderRecentItems(items);
         } catch (error) {
-          console.error("Failed to load recent lost items:", error);
+          console.error('Failed to load recent lost items:', error);
           recentItemsContainer.innerHTML = '<div class="state-card error-card">Unable to load recent lost items right now.</div>';
         }
       }

@@ -7,7 +7,46 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
+<style>
+/* ── Skeleton shimmer ── */
+.skel-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 1rem;
+}
+.skel-img-sq {
+  height: 160px;
+  border-radius: 0.5rem;
+  margin-bottom: .75rem;
+  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+  background-size: 300% 100%;
+  animation: sk-shimmer 1.5s infinite;
+}
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: .45rem;
+  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+  background-size: 300% 100%;
+  animation: sk-shimmer 1.5s infinite;
+}
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+/* ── Card image fade-in ── */
+.lf-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+.lf-img.loaded { opacity: 1; }
+</style>
 <body class="min-h-screen bg-slate-100 px-3 py-4 sm:px-6 sm:py-7">
 
 <main class="mx-auto w-full max-w-6xl">
@@ -188,6 +227,48 @@ function createBadge(type) {
   return badge;
 }
 
+/* ── IntersectionObserver based image lazy loader ── */
+let _lazyObs = null;
+function lazyObserver() {
+  if (_lazyObs) return _lazyObs;
+  _lazyObs = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      const src = img.dataset.src;
+      if (!src) { _lazyObs.unobserve(img); return; }
+      img.src = src;
+      img.addEventListener('load', () => {
+        img.classList.add('loaded');
+        const skel = img.previousElementSibling;
+        if (skel && skel.classList.contains('skel-img-sq')) skel.remove();
+      }, { once: true });
+      img.addEventListener('error', () => {
+        img.parentElement.innerHTML = '<div class="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">No Photo</div>';
+      }, { once: true });
+      _lazyObs.unobserve(img);
+    });
+  }, { rootMargin: '120px' });
+  return _lazyObs;
+}
+
+function renderSkeletons(n) {
+  resultsGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'skel-card';
+    el.innerHTML =
+      '<div class="skel-img-sq"></div>' +
+      '<div class="skel-line" style="width:80%"></div>' +
+      '<div class="skel-line" style="width:55%"></div>' +
+      '<div class="skel-line" style="width:70%"></div>' +
+      '<div class="skel-line" style="width:45%"></div>';
+    frag.appendChild(el);
+  }
+  resultsGrid.appendChild(frag);
+}
+
 function renderResults(items) {
   resultsGrid.innerHTML = "";
   if (!items.length) {
@@ -195,6 +276,7 @@ function renderResults(items) {
     return;
   }
 
+  const obs = lazyObserver();
   const fragment = document.createDocumentFragment();
 
   items.forEach((item) => {
@@ -202,18 +284,22 @@ function renderResults(items) {
     card.className = "rounded-xl border bg-white p-4 shadow-sm";
 
     const preview = document.createElement("div");
-    preview.className = "mb-3 h-40 overflow-hidden rounded-lg bg-slate-100";
+    preview.className = "mb-3 h-40 overflow-hidden rounded-lg bg-slate-100 relative";
 
-    if (item.image || item.fullImage) {
+    const imgSrc = item.imageThumb || item.image || item.fullImage || "";
+    if (imgSrc) {
+      /* Shimmer stays visible until image loads */
+      const shimmer = document.createElement('div');
+      shimmer.className = 'skel-img-sq absolute inset-0';
+      shimmer.style.cssText = 'height:100%;margin:0;border-radius:0;';
+      preview.appendChild(shimmer);
+
       const img = document.createElement("img");
-      img.src = item.image || item.fullImage;
+      img.dataset.src = imgSrc;
       img.alt = (item.itemName || "Item") + " photo";
-      img.loading = "lazy";
-      img.className = "h-full w-full object-cover";
-      img.addEventListener("error", function () {
-        preview.innerHTML = '<div class="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">No Photo</div>';
-      });
+      img.className = "lf-img absolute inset-0";
       preview.appendChild(img);
+      obs.observe(img);
     } else {
       preview.innerHTML = '<div class="flex h-full items-center justify-center text-xs font-semibold uppercase tracking-wide text-slate-500">No Photo</div>';
     }
@@ -243,6 +329,7 @@ function renderResults(items) {
     action.className = "rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition";
     action.textContent = item.type === "found" ? "Claim Item" : "View Report";
     action.addEventListener("click", function () { openItemModal(item); });
+    footer.appendChild(action);
 
     card.appendChild(preview);
     card.appendChild(title);
@@ -257,13 +344,14 @@ function renderResults(items) {
 }
 
 async function runSearch(event) {
-  if (event) {
-    event.preventDefault();
-  }
+  if (event) event.preventDefault();
 
   searchBtn.disabled = true;
   searchBtn.textContent = "Searching...";
   resultsCount.textContent = "Searching...";
+
+  /* Show skeleton cards instantly before API call completes */
+  renderSkeletons(6);
 
   const filters = {
     keyword: searchForm.keyword.value.trim(),
@@ -472,9 +560,10 @@ async function fetchAndEnrichModal(itemId) {
     }
 
     // Update image if better version available
-    if (data.image && data.image !== document.getElementById("itemModalImgInner").querySelector("img")?.src) {
+    const newImgSrc = data.image || data.imageThumb || "";
+    if (newImgSrc && newImgSrc !== document.getElementById("itemModalImgInner").querySelector("img")?.src) {
       document.getElementById("itemModalImgInner").innerHTML =
-        '<img src="' + data.image + '" alt="Item photo" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'No Photo\'">';
+        '<img src="' + newImgSrc + '" alt="Item photo" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'No Photo\'">';
     }
   } catch (e) {
     // Silently fail — modal still works with existing card data

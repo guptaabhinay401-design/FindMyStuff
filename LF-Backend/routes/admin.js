@@ -5,8 +5,8 @@ const Item = require("../models/Item");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 
-const ADMIN_OVERVIEW_ITEM_FIELDS = "itemName type category location date reporterName email status flagged flagReason createdAt imageThumb image";
-const ADMIN_ITEM_LIST_FIELDS = "itemName description type category location date reporterName phone email status flagged flagReason contactPublic possession reportedBy createdAt imageThumb image";
+const ADMIN_OVERVIEW_ITEM_FIELDS = "itemName type category location date reporterName email status flagged flagReason createdAt imageThumb";
+const ADMIN_ITEM_LIST_FIELDS = "itemName description type category location date reporterName phone email status flagged flagReason contactPublic possession reportedBy createdAt imageThumb";
 const ADMIN_USER_FIELDS = "name email mobile collegeId profileImage role isBlocked blockedAt createdAt";
 const ITEM_STATUS_VALUES = new Set(["active", "resolved", "rejected"]);
 const USER_ROLE_VALUES = new Set(["student", "admin"]);
@@ -184,18 +184,20 @@ function serializeItem(item) {
 router.get("/overview", authMiddleware, requireAdmin, async (req, res) => {
   try {
     const [
-      lostCount,
-      foundCount,
-      userCount,
-      resolvedCount,
+      countsRaw,
       lostItems,
       foundItems,
       users
     ] = await Promise.all([
-      Item.countDocuments({ type: "lost" }),
-      Item.countDocuments({ type: "found" }),
-      User.estimatedDocumentCount(),
-      Item.countDocuments({ status: "resolved" }),
+      // Single aggregation for all counts — avoids 3 separate collection scans
+      Item.aggregate([
+        {
+          $facet: {
+            byType: [{ $group: { _id: "$type", count: { $sum: 1 } } }],
+            resolved: [{ $match: { status: "resolved" } }, { $count: "count" }]
+          }
+        }
+      ]),
       Item.find({ type: "lost" })
         .sort({ createdAt: -1 })
         .limit(10)
@@ -212,6 +214,14 @@ router.get("/overview", authMiddleware, requireAdmin, async (req, res) => {
         .select(ADMIN_USER_FIELDS)
         .lean()
     ]);
+
+    // Parse aggregated counts
+    const facet = countsRaw[0] || {};
+    const byType = facet.byType || [];
+    const lostCount = (byType.find(e => e._id === "lost") || {}).count || 0;
+    const foundCount = (byType.find(e => e._id === "found") || {}).count || 0;
+    const resolvedCount = ((facet.resolved || [])[0] || {}).count || 0;
+    const userCount = await User.estimatedDocumentCount();
 
     res.json({
       counts: {

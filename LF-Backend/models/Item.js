@@ -116,8 +116,9 @@ ItemSchema.index({ flagged: 1, createdAt: -1 });
 // Added for Admin Dashboard performance optimization
 ItemSchema.index({ type: 1, createdAt: -1 });
 ItemSchema.index({ createdAt: -1 });
-ItemSchema.index({ status: 1 });
-ItemSchema.index({ category: 1 });
-ItemSchema.index({ location: 1 });
+ItemSchema.index({ status: 1, createdAt: -1 });
+ItemSchema.index({ category: 1, createdAt: -1 });
+ItemSchema.index({ location: 1, createdAt: -1 });
+ItemSchema.index({ flagged: 1, status: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Item", ItemSchema);
