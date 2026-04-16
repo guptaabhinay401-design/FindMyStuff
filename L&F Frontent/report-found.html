@@ -41,15 +41,7 @@
           <label for="category" class="mb-1 block text-sm font-medium">Category *</label>
           <select id="category" name="category" required
           class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500">
-            <option value="">Select Category</option>
-            <option>Wallet</option>
-            <option>Mobile Phone</option>
-            <option>Keys</option>
-            <option>ID Card</option>
-            <option>Bag</option>
-            <option>Electronics</option>
-            <option>Watch</option>
-            <option>Other</option>
+            <option value="">Loading categories...</option>
           </select>
         </div>
 
@@ -85,14 +77,7 @@
             <label for="location" class="mb-1 block text-sm font-medium">Location Found *</label>
             <select id="location" name="location" required
             class="w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500">
-              <option value="">Select Location</option>
-              <option>Library</option>
-              <option>Cafeteria</option>
-              <option>Hostel</option>
-              <option>Parking Area</option>
-              <option>Classroom</option>
-              <option>Auditorium</option>
-              <option value="Other">Other</option>
+              <option value="">Loading locations...</option>
             </select>
             <input id="customLocation" name="customLocation" type="text"
             class="mt-2 hidden w-full rounded-lg border px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500"
@@ -191,12 +176,36 @@ function applyUserToForm(user) {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
+  const API_BASE = (window.LFAuth && window.LFAuth.API_BASE) || 'https://findmystuff-backend-d16m.onrender.com/api';
+
+  // Load categories from backend
+  try {
+    const catsRes = await fetch(API_BASE + '/settings/categories');
+    const catsData = await catsRes.json();
+    const catSelect = document.getElementById('category');
+    catSelect.innerHTML = '<option value="">Select Category</option>' +
+      (catsData.categories || []).map(c => `<option>${c}</option>`).join('');
+  } catch(e) {
+    document.getElementById('category').innerHTML = '<option value="">Select Category</option><option>Wallet</option><option>Mobile Phone</option><option>Keys</option><option>ID Card</option><option>Bag</option><option>Electronics</option><option>Watch</option><option>Other</option>';
+  }
+
+  // Load locations from backend
+  try {
+    const locsRes = await fetch(API_BASE + '/settings/locations');
+    const locsData = await locsRes.json();
+    const locSelect = document.getElementById('location');
+    locSelect.innerHTML = '<option value="">Select Location</option>' +
+      (locsData.locations || []).map(l => `<option>${l}</option>`).join('') +
+      '<option value="Other">Other</option>';
+  } catch(e) {
+    document.getElementById('location').innerHTML = '<option value="">Select Location</option><option>Library</option><option>Cafeteria</option><option>Hostel</option><option>Parking Area</option><option>Classroom</option><option>Auditorium</option><option value="Other">Other</option>';
+  }
+
   const user = await window.LFAuth.bootstrapUserFromToken();
   if (!user) {
     window.location.href = "login.html";
     return;
   }
-
   applyUserToForm(user);
 });
 

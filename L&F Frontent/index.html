@@ -564,9 +564,31 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
+    /* ── Announcement banner ── */
+    #announcements-banner {
+      width: 100%;
+    }
+    .ann-banner-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .ann-b-info    { background:#eff6ff; color:#1e40af; }
+    .ann-b-warning { background:#fffbeb; color:#92400e; }
+    .ann-b-urgent  { background:#fef2f2; color:#991b1b; }
+    .ann-banner-item strong { font-weight:700; }
+    .ann-dismiss { border:none; background:none; opacity:.6; font-size:1rem; cursor:pointer; flex-shrink:0; padding:0; }
+    .ann-dismiss:hover { opacity:1; }
   </style>
 </head>
 <body>
+  <!-- Announcements Banner -->
+  <div id="announcements-banner"></div>
   <header class="site-header">
     <div class="container nav-wrap">
       <a class="brand" href="index.html">FindMyStuff</a>
@@ -1032,11 +1054,41 @@
         syncCurrentUser();
         loadRecentItems();
         setInterval(loadRecentItems, 30000);
+        loadAnnouncementsBanner();
 
         if (!isLoggedIn()) {
           setTimeout(openSignupModal, 250);
         }
       });
+
+      /* ── Announcements Banner ── */
+      async function loadAnnouncementsBanner() {
+        var banner = document.getElementById('announcements-banner');
+        if (!banner) return;
+        var dismissed = JSON.parse(sessionStorage.getItem('lf_dismissed_ann') || '[]');
+        var apiBase = (window.LFAuth && window.LFAuth.API_BASE) || 'https://findmystuff-backend-d16m.onrender.com/api';
+        try {
+          var res = await fetch(apiBase + '/settings/announcements');
+          var data = await res.json();
+          var list = (data.announcements || []).filter(function(a) { return dismissed.indexOf(a._id) === -1; });
+          if (!list.length) { banner.innerHTML = ''; return; }
+          var icons = { info: 'ℹ️', warning: '⚠️', urgent: '🚨' };
+          banner.innerHTML = list.map(function(a) {
+            return '<div class="ann-banner-item ann-b-' + a.priority + '" id="ann-b-' + a._id + '">' +
+              '<span>' + (icons[a.priority]||'ℹ️') + ' <strong>' + a.title + '</strong> — ' + a.message + '</span>' +
+              '<button class="ann-dismiss" onclick="dismissAnnBanner(\'' + a._id + '\')" aria-label="Dismiss">✕</button>' +
+              '</div>';
+          }).join('');
+        } catch(e) { banner.innerHTML = ''; }
+      }
+
+      function dismissAnnBanner(id) {
+        var el = document.getElementById('ann-b-' + id);
+        if (el) el.remove();
+        var dismissed = JSON.parse(sessionStorage.getItem('lf_dismissed_ann') || '[]');
+        dismissed.push(id);
+        sessionStorage.setItem('lf_dismissed_ann', JSON.stringify(dismissed));
+      }
     })();
   </script>
 </body>

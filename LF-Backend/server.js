@@ -13,6 +13,7 @@ const lostItemRoutes = require("./routes/lostItems");
 const foundItemRoutes = require("./routes/foundItems");
 const adminRoutes = require("./routes/admin");
 const claimsRoutes = require("./routes/claims");
+const settingsRoutes = require("./routes/settings");
 
 // Create express app
 const app = express();
@@ -96,6 +97,10 @@ app.use("/api/admin", adminRoutes);
 // Claims routes
 // Example: /api/claims
 app.use("/api/claims", claimsRoutes);
+
+// Settings routes (categories, locations, toggles, announcements)
+// Example: /api/settings/categories
+app.use("/api/settings", settingsRoutes);
 
 
 // ================================

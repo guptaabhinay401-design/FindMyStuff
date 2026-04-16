@@ -1107,110 +1107,148 @@ function updatePager(prefix,pg){
   if(next){next.disabled=!pg.hasNextPage;next.style.opacity=pg.hasNextPage?'1':'.45';}
 }
 
-/* ─── ANNOUNCEMENTS ─── */
-const ANN_KEY='lf_admin_announcements';
-function getAnnouncements(){try{return JSON.parse(localStorage.getItem(ANN_KEY)||'[]');}catch(e){return[];}}
-function saveAnnouncements(arr){localStorage.setItem(ANN_KEY,JSON.stringify(arr));}
-
-function sendAnnouncement(){
+/* ─── ANNOUNCEMENTS (backend-driven) ─── */
+async function sendAnnouncement(){
   const title=document.getElementById('annTitle').value.trim();
   const message=document.getElementById('annMessage').value.trim();
   const priority=document.getElementById('annPriority').value;
   if(!title||!message){toast('Title and message are required','warning');return;}
-  const ann={id:Date.now(),title,message,priority,sentAt:new Date().toISOString(),sentBy:getCurrentUser()?.name||'Admin'};
-  const list=getAnnouncements();
-  list.unshift(ann);saveAnnouncements(list.slice(0,50));
-  document.getElementById('annTitle').value='';
-  document.getElementById('annMessage').value='';
-  renderAnnouncements();
-  toast('Announcement sent and logged!','success');
+  try{
+    await api('/settings/announcements',{method:'POST',body:JSON.stringify({title,message,priority,sentBy:getCurrentUser()?.name||'Admin'})});
+    document.getElementById('annTitle').value='';
+    document.getElementById('annMessage').value='';
+    await renderAnnouncements();
+    toast('Announcement sent to ALL users!','success');
+  }catch(e){toast(e.message,'error');}
 }
 
-function renderAnnouncements(){
+async function renderAnnouncements(){
   const log=document.getElementById('annLog');
-  const list=getAnnouncements();
-  if(!list.length){log.innerHTML='<p style="font-size:13px;color:#94a3b8;text-align:center;padding:24px;">No announcements yet. Send one using the form.</p>';return;}
-  log.innerHTML=list.map(a=>`
-    <div class="ann-card ann-${a.priority}" style="position:relative;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <div>
-          <p style="font-size:13.5px;font-weight:700;color:#0f172a;">${a.title}</p>
-          <p style="font-size:12.5px;color:#475569;margin-top:3px;">${a.message}</p>
-          <p style="font-size:11px;color:#94a3b8;margin-top:6px;">By ${a.sentBy} · ${fmt(a.sentAt)}</p>
+  log.innerHTML='<p style="font-size:13px;color:#94a3b8;text-align:center;padding:24px;">Loading...</p>';
+  try{
+    const data=await api('/settings/announcements');
+    const list=data.announcements||[];
+    if(!list.length){log.innerHTML='<p style="font-size:13px;color:#94a3b8;text-align:center;padding:24px;">No announcements yet. Send one using the form.</p>';return;}
+    log.innerHTML=list.map(a=>`
+      <div class="ann-card ann-${a.priority}" style="position:relative;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <p style="font-size:13.5px;font-weight:700;color:#0f172a;">${a.title}</p>
+            <p style="font-size:12.5px;color:#475569;margin-top:3px;">${a.message}</p>
+            <p style="font-size:11px;color:#94a3b8;margin-top:6px;">By ${a.sentBy} · ${fmt(a.createdAt)}</p>
+          </div>
+          <button onclick="deleteAnn('${a._id}')" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
         </div>
-        <button onclick="deleteAnn(${a.id})" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
-      </div>
-    </div>`).join('');
+      </div>`).join('');
+  }catch(e){log.innerHTML='<p style="font-size:13px;color:#dc2626;text-align:center;padding:24px;">'+e.message+'</p>';}
 }
 
-function deleteAnn(id){
-  saveAnnouncements(getAnnouncements().filter(a=>a.id!==id));
-  renderAnnouncements();
+async function deleteAnn(id){
+  try{
+    await api('/settings/announcements/'+id,{method:'DELETE'});
+    toast('Announcement removed','info');
+    await renderAnnouncements();
+  }catch(e){toast(e.message,'error');}
 }
 
-function clearAnnouncements(){
-  if(!confirm('Clear all announcements?'))return;
-  localStorage.removeItem(ANN_KEY);renderAnnouncements();
+async function clearAnnouncements(){
+  if(!confirm('Clear ALL announcements for all users?'))return;
+  try{
+    await api('/settings/announcements',{method:'DELETE'});
+    toast('All announcements cleared','info');
+    await renderAnnouncements();
+  }catch(e){toast(e.message,'error');}
 }
 
-/* ─── SETTINGS ─── */
-const CAT_KEY='lf_admin_categories';
-const LOC_KEY='lf_admin_locations';
-const TOG_KEY='lf_admin_toggles';
-
+/* ─── SETTINGS (backend-driven) ─── */
 const DEFAULT_CATS=['Wallet','Mobile Phone','Keys','ID Card','Bag','Electronics','Watch','Laptop','Headphones','Other'];
 const DEFAULT_LOCS=['Library','Cafeteria','Hostel','Parking Area','Classroom','Auditorium','Lab','Sports Ground','Reception'];
+let _cats=null, _locs=null; // session cache
 
-function getCats(){try{return JSON.parse(localStorage.getItem(CAT_KEY)||'null')||[...DEFAULT_CATS];}catch(e){return[...DEFAULT_CATS];}}
-function getLocs(){try{return JSON.parse(localStorage.getItem(LOC_KEY)||'null')||[...DEFAULT_LOCS];}catch(e){return[...DEFAULT_LOCS];}}
-function getToggles(){try{return JSON.parse(localStorage.getItem(TOG_KEY)||'null')||{guest:true,contact:true,signup:true,email:false};}catch(e){return{guest:true,contact:true,signup:true,email:false};}}
+async function _getCats(){
+  if(_cats)return _cats;
+  try{const d=await api('/settings/categories');_cats=d.categories||DEFAULT_CATS;}catch(e){_cats=[...DEFAULT_CATS];}
+  return _cats;
+}
+async function _getLocs(){
+  if(_locs)return _locs;
+  try{const d=await api('/settings/locations');_locs=d.locations||DEFAULT_LOCS;}catch(e){_locs=[...DEFAULT_LOCS];}
+  return _locs;
+}
+async function _saveCats(arr){_cats=arr;await api('/settings/categories',{method:'PUT',body:JSON.stringify({categories:arr})});}
+async function _saveLocs(arr){_locs=arr;await api('/settings/locations',{method:'PUT',body:JSON.stringify({locations:arr})});}
 
-function saveCats(arr){localStorage.setItem(CAT_KEY,JSON.stringify(arr));}
-function saveLocs(arr){localStorage.setItem(LOC_KEY,JSON.stringify(arr));}
-function saveToggle(key,val){const t=getToggles();t[key]=val;localStorage.setItem(TOG_KEY,JSON.stringify(t));}
-
-function addCategory(){
+async function addCategory(){
   const inp=document.getElementById('newCategoryInput');
   const val=inp.value.trim();
   if(!val){toast('Enter a category name','warning');return;}
-  const cats=getCats();
+  const cats=await _getCats();
   if(cats.some(c=>c.toLowerCase()===val.toLowerCase())){toast('Category already exists','warning');return;}
-  cats.push(val);saveCats(cats);inp.value='';renderCategories();toast('Category added','success');
+  cats.push(val);
+  try{await _saveCats(cats);inp.value='';await renderCategories();toast('Category added — users can now see it!','success');}
+  catch(e){toast(e.message,'error');}
 }
-function removeCategory(cat){
-  const cats=getCats().filter(c=>c!==cat);saveCats(cats);renderCategories();toast('Category removed','info');
+async function removeCategory(cat){
+  const cats=(await _getCats()).filter(c=>c!==cat);
+  try{await _saveCats(cats);await renderCategories();toast('Category removed','info');}
+  catch(e){toast(e.message,'error');}
 }
-function renderCategories(){
+async function renderCategories(){
   const el=document.getElementById('categoriesList');
-  el.innerHTML=getCats().map(c=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
+  el.innerHTML='<li style="padding:8px;color:#94a3b8;font-size:13px;">Loading...</li>';
+  const cats=await _getCats();
+  el.innerHTML=cats.map(c=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
     ${c}
-    <button onclick="removeCategory('${c.replace(/'/g,"\\'")}') " style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
+    <button onclick="removeCategory('${c.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
   </li>`).join('');
 }
 
-function addLocation(){
+async function addLocation(){
   const inp=document.getElementById('newLocationInput');
   const val=inp.value.trim();
   if(!val){toast('Enter a location name','warning');return;}
-  const locs=getLocs();
+  const locs=await _getLocs();
   if(locs.some(l=>l.toLowerCase()===val.toLowerCase())){toast('Location already exists','warning');return;}
-  locs.push(val);saveLocs(locs);inp.value='';renderLocations();toast('Location added','success');
+  locs.push(val);
+  try{await _saveLocs(locs);inp.value='';await renderLocations();toast('Location added — users can now see it!','success');}
+  catch(e){toast(e.message,'error');}
 }
-function removeLocation(loc){
-  const locs=getLocs().filter(l=>l!==loc);saveLocs(locs);renderLocations();toast('Location removed','info');
+async function removeLocation(loc){
+  const locs=(await _getLocs()).filter(l=>l!==loc);
+  try{await _saveLocs(locs);await renderLocations();toast('Location removed','info');}
+  catch(e){toast(e.message,'error');}
 }
-function renderLocations(){
+async function renderLocations(){
   const el=document.getElementById('locationsList');
-  el.innerHTML=getLocs().map(l=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
+  el.innerHTML='<li style="padding:8px;color:#94a3b8;font-size:13px;">Loading...</li>';
+  const locs=await _getLocs();
+  el.innerHTML=locs.map(l=>`<li style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:9px;font-size:13px;color:#0f172a;font-weight:500;">
     ${l}
-    <button onclick="removeLocation('${l.replace(/'/g,"\\'")}') " style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
+    <button onclick="removeLocation('${l.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>
   </li>`).join('');
 }
 
-function renderSettings(){
-  renderCategories();renderLocations();
-  const t=getToggles();
-  Object.entries(t).forEach(([k,v])=>{const el=document.getElementById('tog-'+k);if(el)el.checked=v;});
+async function saveToggle(key,val){
+  const keyMap={guest:'guestBrowsing',contact:'showContactInfo',signup:'newRegistrations',email:'emailNotifications'};
+  const apiKey=keyMap[key]||key;
+  try{
+    await api('/settings/toggles',{method:'PUT',body:JSON.stringify({toggles:{[apiKey]:val}})});
+    toast('Setting saved','success');
+  }catch(e){toast(e.message,'error');}
+}
+
+async function renderSettings(){
+  await renderCategories();
+  await renderLocations();
+  try{
+    const data=await api('/settings/toggles');
+    const t=data.toggles||{};
+    const keyMap={guestBrowsing:'guest',showContactInfo:'contact',newRegistrations:'signup',emailNotifications:'email'};
+    Object.entries(keyMap).forEach(([apiKey,uiKey])=>{
+      const el=document.getElementById('tog-'+uiKey);
+      if(el&&typeof t[apiKey]==='boolean')el.checked=t[apiKey];
+    });
+  }catch(e){console.warn('Could not load toggles:',e.message);}
 }
 
 /* ─── RESPONSIVE ─── */
