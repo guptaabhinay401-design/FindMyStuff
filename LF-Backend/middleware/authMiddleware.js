@@ -33,8 +33,11 @@ module.exports = async function(req, res, next) {
             });
         }
 
-        // Reject blocked users from all protected actions
-        if (user.isBlocked) {
+        // Admins always bypass the block check — they must retain platform access
+        const isAdmin = (user.role || "").toLowerCase() === "admin";
+
+        // Reject blocked users from all protected actions (non-admins only)
+        if (!isAdmin && user.isBlocked) {
             return res.status(403).json({
                 message: "Your account has been blocked by an administrator. Please contact support.",
                 isBlocked: true,

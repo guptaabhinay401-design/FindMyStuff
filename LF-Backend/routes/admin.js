@@ -282,6 +282,13 @@ router.put("/users/:id/block", authMiddleware, requireAdmin, async (req, res) =>
       });
     }
 
+    // Prevent blocking admin accounts
+    if ((user.role || "").toLowerCase() === "admin") {
+      return res.status(400).json({
+        message: "Admin accounts cannot be blocked"
+      });
+    }
+
     user.isBlocked = !user.isBlocked;
     user.blockedAt = user.isBlocked ? new Date() : null;
     await user.save();
