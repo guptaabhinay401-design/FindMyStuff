@@ -58,7 +58,7 @@
           class="w-full rounded-lg border bg-slate-50 px-4 py-2.5 text-sm">
           <p class="mt-1.5 flex items-center gap-1.5 text-xs text-amber-600">
             <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-            Photo upload optional hai, lekin photo hone se item milne ki sambhavna barh jaati hai!
+            Photo is optional, but adding one increases the chances of finding your item!
           </p>
         </div>
       </section>
@@ -250,7 +250,7 @@ form.addEventListener("submit", async function (event) {
       imageThumbData = optimizedImages.imageThumb;
     }
   } catch (error) {
-    showStatus("Image read nahi ho payi. Dobara select karo.", "error");
+    showStatus("Could not read the image. Please try selecting it again.", "error");
     submitBtn.disabled = false;
     submitBtn.textContent = "Submit Report";
     return;
@@ -273,10 +273,12 @@ form.addEventListener("submit", async function (event) {
 
   try {
     await window.LFStore.createLostItem(payload);
-    form.reset();
-    locationField.dispatchEvent(new Event("change"));
-    dateLostInput.value = new Date().toISOString().slice(0, 10);
-    showStatus("Lost item report submitted successfully.", "success");
+    sessionStorage.setItem("lf_toast", JSON.stringify({
+      type: "success",
+      title: "Report Submitted!",
+      message: "Your lost item report has been submitted successfully. We'll notify you if a match is found."
+    }));
+    window.location.href = "index.html";
   } catch (error) {
     console.error("Failed to submit lost item report:", error);
     showStatus(error.message || "Could not submit report. Please try again.", "error");
