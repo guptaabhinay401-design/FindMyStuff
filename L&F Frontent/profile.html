@@ -734,7 +734,7 @@ img { display: block; }
         </div>
         <div class="info-field">
           <span class="info-label"><i class="fa-solid fa-shield-halved" style="width:12px;"></i> Account Status</span>
-          <span class="info-value" style="color:#16a34a;"><i class="fa-solid fa-circle-check" style="font-size:.75rem;"></i> Verified</span>
+          <span class="info-value" id="viewAccountStatus" style="color:#16a34a;"><i class="fa-solid fa-circle-check" style="font-size:.75rem;"></i> Verified</span>
         </div>
       </div>
     </div>
@@ -1051,12 +1051,48 @@ function renderProfile(user) {
     ? 'background:#faf5ff;color:#7c3aed;border-color:#e9d5ff;'
     : '';
 
+  // Account Status field — show Blocked badge if blocked
+  const statusEl = document.getElementById('viewAccountStatus');
+  if (statusEl) {
+    if (user.isBlocked) {
+      statusEl.innerHTML = '<i class="fa-solid fa-ban" style="font-size:.75rem;"></i> Blocked';
+      statusEl.style.color = '#dc2626';
+    } else {
+      statusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:.75rem;"></i> Verified';
+      statusEl.style.color = '#16a34a';
+    }
+  }
+
+  // Disable Quick Action report links if blocked
+  if (user.isBlocked) {
+    document.querySelectorAll('a.action-item').forEach(function(a) {
+      var href = a.getAttribute('href') || '';
+      if (href.includes('report-lost') || href.includes('report-found')) {
+        a.style.opacity = '0.4';
+        a.style.pointerEvents = 'none';
+        a.style.cursor = 'not-allowed';
+        a.title = 'Your account is blocked. You cannot report items.';
+      }
+    });
+
+    // Show blocked notice under the name
+    var nameEl = document.getElementById('viewName');
+    if (nameEl && !document.getElementById('blockedBadgeInline')) {
+      var badge = document.createElement('span');
+      badge.id = 'blockedBadgeInline';
+      badge.style.cssText = 'display:inline-flex;align-items:center;gap:.3rem;margin-left:.6rem;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:.1rem .5rem;font-size:.72rem;font-weight:700;vertical-align:middle;';
+      badge.innerHTML = '<i class="fa-solid fa-ban"></i> BLOCKED';
+      nameEl.parentNode.insertBefore(badge, nameEl.nextSibling);
+    }
+  }
+
   renderAvatarEl(document.getElementById('heroAvatar'), user.profileImage);
 
   // Persist to localStorage for nav avatar
   const stored = {};
   try { Object.assign(stored, JSON.parse(localStorage.getItem('lf_auth_user') || '{}')); } catch(e){}
   stored.name = user.name;
+  stored.isBlocked = user.isBlocked || false;
   stored.profileImage = user.profileImage && !user.profileImage.startsWith('data:') ? user.profileImage : stored.profileImage;
   localStorage.setItem('lf_auth_user', JSON.stringify(stored));
 }
@@ -1150,6 +1186,17 @@ async function loadProfile() {
   try {
     const res = await fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + tok() } });
     const data = await res.json().catch(() => ({}));
+
+    // Blocked user — render profile showing blocked status, don't redirect to login
+    if (res.status === 403 && data.isBlocked) {
+      var stored = {};
+      try { stored = JSON.parse(localStorage.getItem('lf_auth_user') || '{}'); } catch(e){}
+      stored.isBlocked = true;
+      localStorage.setItem('lf_auth_user', JSON.stringify(stored));
+      renderProfile(stored);
+      return;
+    }
+
     if (!res.ok) throw new Error(data.message || 'Session expired');
     renderProfile(data.user || {});
   } catch(e) {
