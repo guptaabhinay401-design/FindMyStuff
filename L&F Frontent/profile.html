@@ -979,6 +979,7 @@ img { display: block; }
 
 <script src="js/auth-client.js"></script>
 <script src="js/image-utils.js"></script>
+<script src="js/item-view-modal.js"></script>
 <script>
 /* ═════════════════════════════════════════════════════════
    STATE
@@ -1148,7 +1149,7 @@ function renderActivity(data) {
         </div>
         <div class="activity-right">
           <span class="status-badge ${getStatusClass(c.status)}">${c.status || 'pending'}</span>
-          ${it._id ? `<a href="search.html?itemId=${it._id}" class="btn-view">View</a>` : ''}
+          ${it._id ? `<button class="btn-view" onclick="window.LFItemModal.open('${it._id}')">View</button>` : ''}
         </div>`;
       frag.appendChild(div);
     });
@@ -1168,7 +1169,7 @@ function renderActivity(data) {
         </div>
         <div class="activity-right">
           <span class="status-badge ${getStatusClass(item.status)}">${item.status || 'active'}</span>
-          ${item._id ? `<a href="search.html?itemId=${item._id}" class="btn-view">View</a>` : ''}
+          ${item._id ? `<button class="btn-view" onclick="window.LFItemModal.open('${item._id}')">View</button>` : ''}
         </div>`;
       frag.appendChild(div);
     });
