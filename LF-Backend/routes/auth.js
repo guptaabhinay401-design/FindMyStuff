@@ -26,7 +26,9 @@ function sanitizeUser(user) {
         profileImage: user.profileImage || "",
         role: user.role || "student",
         createdAt: user.createdAt || null,
-        oauthProvider: user.oauthProvider || ""
+        oauthProvider: user.oauthProvider || "",
+        isBlocked: user.isBlocked || false,
+        blockedAt: user.blockedAt || null
     };
 }
 
@@ -162,7 +164,7 @@ async function findUserForPasswordLogin(email) {
 
 async function findCurrentUser(userId) {
     return User.findById(userId)
-        .select(PUBLIC_USER_FIELDS)
+        .select(PUBLIC_USER_FIELDS + " isBlocked blockedAt")
         .lean();
 }
 
@@ -238,6 +240,14 @@ router.post("/login", async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({
                 message: "Invalid credentials"
+            });
+        }
+
+        // Reject blocked users at login
+        if (user.isBlocked) {
+            return res.status(403).json({
+                message: "Your account has been blocked by an administrator. Please contact support.",
+                isBlocked: true
             });
         }
 

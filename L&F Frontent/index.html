@@ -676,9 +676,34 @@
     .toast-bar-success { background: linear-gradient(90deg, #3b82f6, #2563eb); }
     .toast-bar-found   { background: linear-gradient(90deg, #22c55e, #16a34a); }
     .toast-bar-login   { background: linear-gradient(90deg, #6366f1, #4f46e5); }
+
+    /* ── Blocked Account Banner ── */
+    #blocked-banner {
+      display: none;
+      background: linear-gradient(135deg, #7f1d1d, #991b1b);
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    #blocked-banner.show { display: block; }
+    #blocked-banner a { color: #fca5a5; text-decoration: underline; }
+    .btn-blocked {
+      opacity: 0.45 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      filter: grayscale(0.8) !important;
+    }
   </style>
 </head>
 <body>
+  <!-- Blocked Account Banner -->
+  <div id="blocked-banner">
+    🚫 Your account has been <strong>blocked by an administrator</strong>. You can view items but cannot report, claim, or interact with the platform. <a href="mailto:support@findmystuff.app">Contact support</a> for help.
+  </div>
+
   <!-- Announcements Banner -->
   <div id="announcements-banner"></div>
   <header class="site-header">
@@ -1155,9 +1180,35 @@
         });
       }
 
+      /* ── Blocked account state ── */
+      function applyBlockedState() {
+        var raw = localStorage.getItem('lf_auth_user');
+        if (!raw) return;
+        var user;
+        try { user = JSON.parse(raw); } catch(e) { return; }
+        if (!user || !user.isBlocked) return;
+
+        // Show red banner
+        var banner = document.getElementById('blocked-banner');
+        if (banner) banner.classList.add('show');
+
+        // Disable Report Lost / Report Found buttons
+        document.querySelectorAll('a.btn').forEach(function(btn) {
+          if (btn.getAttribute('href') && (
+            btn.getAttribute('href').includes('report-lost') ||
+            btn.getAttribute('href').includes('report-found')
+          )) {
+            btn.classList.add('btn-blocked');
+            btn.removeAttribute('href');
+            btn.setAttribute('title', 'Your account is blocked. You cannot report items.');
+          }
+        });
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
         applyAuthNavState();
         applyProfileAvatar();
+        applyBlockedState();
         syncCurrentUser();
         loadRecentItems();
         setInterval(loadRecentItems, 30000);

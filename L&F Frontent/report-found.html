@@ -132,6 +132,14 @@
   </section>
 </main>
 
+<!-- Blocked Account Overlay -->
+<div id="blockedOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e1e2e,#14342b);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+  <div style="font-size:3.5rem;margin-bottom:1rem">🚫</div>
+  <h2 style="font-size:1.6rem;font-weight:800;margin:0 0 0.5rem">Account Blocked</h2>
+  <p style="color:#6ee7b7;max-width:420px;line-height:1.6;margin:0 0 1.5rem">Your account has been blocked by an administrator. You are not allowed to submit reports. Please contact support for assistance.</p>
+  <a href="index.html" style="background:#fff;color:#064e3b;font-weight:700;padding:0.75rem 2rem;border-radius:12px;text-decoration:none;font-size:0.95rem;">← Back to Home</a>
+</div>
+
 <script src="js/auth-client.js"></script>
 <script src="js/image-utils.js"></script>
 <script src="js/data-store.js"></script>
@@ -176,6 +184,23 @@ function applyUserToForm(user) {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
+  // Blocked user check — show overlay if blocked
+  (function() {
+    var raw = localStorage.getItem('lf_auth_user');
+    if (raw) {
+      try {
+        var u = JSON.parse(raw);
+        if (u && u.isBlocked) {
+          var ov = document.getElementById('blockedOverlay');
+          if (ov) { ov.style.display = 'flex'; }
+          var form = document.getElementById('foundReportForm');
+          if (form) form.style.display = 'none';
+          return;
+        }
+      } catch(e) {}
+    }
+  })();
+
   const API_BASE = (window.LFAuth && window.LFAuth.API_BASE) || 'https://findmystuff-backend-d16m.onrender.com/api';
 
   // Load categories from backend
