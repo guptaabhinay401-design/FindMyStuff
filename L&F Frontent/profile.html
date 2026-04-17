@@ -1179,46 +1179,71 @@ function renderActivity(data) {
 }
 
 /* ═════════════════════════════════════════════════════════
-   LOAD DATA
+   LOAD DATA  — optimistic + parallel strategy
+   1. Render localStorage instantly (zero wait)
+   2. Fire /me + /my-activity in parallel
+   3. Refresh UI as each resolves
 ═════════════════════════════════════════════════════════ */
 async function loadProfile() {
   if (!tok()) { window.location.href = 'login.html'; return; }
 
-  try {
-    const res = await fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + tok() } });
+  // ── STEP 1: Instant render from cache ─────────────────
+  const cached = window.LFAuth.getStoredUser();
+  if (cached && (cached.name || cached.email)) {
+    renderProfile(cached);
+  }
+
+  // ── STEP 2: Fire both calls in parallel ───────────────
+  const headers = { Authorization: 'Bearer ' + tok() };
+
+  const [meRes, actRes] = await Promise.allSettled([
+    fetch(API + '/auth/me',          { headers }),
+    fetch(API + '/auth/my-activity', { headers })
+  ]);
+
+  // Handle /me
+  if (meRes.status === 'fulfilled') {
+    const res  = meRes.value;
     const data = await res.json().catch(() => ({}));
 
-    // Blocked user — render profile showing blocked status, don't redirect to login
     if (res.status === 403 && data.isBlocked) {
-      var stored = {};
-      try { stored = JSON.parse(localStorage.getItem('lf_auth_user') || '{}'); } catch(e){}
+      const stored = window.LFAuth.getStoredUser() || {};
       stored.isBlocked = true;
+      stored.blockedAt = data.blockedAt || stored.blockedAt || null;
       localStorage.setItem('lf_auth_user', JSON.stringify(stored));
       renderProfile(stored);
-      return;
+    } else if (res.ok && data.user) {
+      window.LFAuth.persistAuthSession(data.user, tok());
+      renderProfile(data.user);
+    } else if (!res.ok && !cached) {
+      clearSession();
+      window.location.href = 'login.html';
     }
-
-    if (!res.ok) throw new Error(data.message || 'Session expired');
-    renderProfile(data.user || {});
-  } catch(e) {
+  } else if (!cached) {
     clearSession();
     window.location.href = 'login.html';
   }
+
+  // Handle /my-activity
+  if (actRes.status === 'fulfilled') {
+    const res  = actRes.value;
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      renderActivity(data);
+      renderStats(data.stats || {});
+    } else {
+      _showActivityError();
+    }
+  } else {
+    _showActivityError();
+  }
 }
 
-async function loadActivity() {
-  try {
-    const res = await fetch(API + '/auth/my-activity', { headers: { Authorization: 'Bearer ' + tok() } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message);
-    renderActivity(data);
-    renderStats(data.stats || {});
-  } catch(e) {
-    const list = document.getElementById('activityList');
-    const sk = document.getElementById('activitySkeleton');
-    if (sk) sk.remove();
-    list.innerHTML = '<div class="empty-activity"><i class="fa-solid fa-triangle-exclamation"></i>Could not load activity.</div>';
-  }
+function _showActivityError() {
+  const list = document.getElementById('activityList');
+  const sk   = document.getElementById('activitySkeleton');
+  if (sk) sk.remove();
+  list.innerHTML = '<div class="empty-activity"><i class="fa-solid fa-triangle-exclamation"></i>Could not load activity.</div>';
 }
 
 /* ═════════════════════════════════════════════════════════
@@ -1357,9 +1382,9 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
 /* ═════════════════════════════════════════════════════════
    INIT
 ═════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', async function() {
-  await loadProfile();
-  loadActivity();
+document.addEventListener('DOMContentLoaded', function() {
+  // Single call handles everything — parallel fetch + instant render
+  loadProfile();
 });
 </script>
 </body>

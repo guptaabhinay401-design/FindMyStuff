@@ -1,14 +1,38 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// This middleware protects routes using JWT authentication
-// It also checks if the user is blocked in the database
-module.exports = async function(req, res, next) {
+// ── In-memory user cache (TTL: 30 seconds) ──────────────────────────────────
+// Avoids a DB round-trip on every API call for the same user.
+// Cache is invalidated automatically after 30 seconds, so block/role changes
+// propagate within half a minute without needing a full page reload.
+const userCache = new Map();
+const CACHE_TTL_MS = 30 * 1000;
 
-    // Get token from request header
+function getCached(userId) {
+    const entry = userCache.get(userId);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > CACHE_TTL_MS) {
+        userCache.delete(userId);
+        return null;
+    }
+    return entry.user;
+}
+
+function setCache(userId, user) {
+    // Limit cache size to prevent unbounded memory growth
+    if (userCache.size > 2000) userCache.clear();
+    userCache.set(userId, { user, ts: Date.now() });
+}
+
+// Call this whenever a user's block/role status changes (e.g., after admin block action)
+function invalidateCache(userId) {
+    if (userId) userCache.delete(String(userId));
+}
+
+// ── Middleware ───────────────────────────────────────────────────────────────
+module.exports = async function authMiddleware(req, res, next) {
+
     const token = req.header("Authorization");
-
-    // If token is not present
     if (!token || !token.startsWith("Bearer ")) {
         return res.status(401).json({
             message: "No token provided, access denied ❌"
@@ -16,27 +40,30 @@ module.exports = async function(req, res, next) {
     }
 
     try {
-        // Remove "Bearer" from token string
         const actualToken = token.slice("Bearer ".length).trim();
-
-        // Verify token using secret key
         const decoded = jwt.verify(actualToken, process.env.JWT_SECRET);
+        const userId = String(decoded.id);
 
-        // Fetch fresh user from DB to check block status
-        const user = await User.findById(decoded.id)
-            .select("_id email role isBlocked blockedAt")
-            .lean();
+        // Try cache first
+        let user = getCached(userId);
 
         if (!user) {
-            return res.status(401).json({
-                message: "User not found. Please log in again."
-            });
+            // Cache miss — query DB and populate cache
+            user = await User.findById(userId)
+                .select("_id email role isBlocked blockedAt")
+                .lean();
+
+            if (!user) {
+                return res.status(401).json({
+                    message: "User not found. Please log in again."
+                });
+            }
+            setCache(userId, user);
         }
 
-        // Admins always bypass the block check — they must retain platform access
+        // Admins bypass the block check — must always retain platform access
         const isAdmin = (user.role || "").toLowerCase() === "admin";
 
-        // Reject blocked users from all protected actions (non-admins only)
         if (!isAdmin && user.isBlocked) {
             return res.status(403).json({
                 message: "Your account has been blocked by an administrator. Please contact support.",
@@ -45,9 +72,8 @@ module.exports = async function(req, res, next) {
             });
         }
 
-        // Attach user info to request
         req.user = {
-            id: String(user._id),
+            id: userId,
             email: user.email,
             role: user.role || "student"
         };
@@ -59,5 +85,6 @@ module.exports = async function(req, res, next) {
             message: "Invalid token ❌"
         });
     }
-
 };
+
+module.exports.invalidateCache = invalidateCache;

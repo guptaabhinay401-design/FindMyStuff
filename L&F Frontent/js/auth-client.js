@@ -1,143 +1,135 @@
 (function () {
+  'use strict';
+
+  // ── API base resolution ──────────────────────────────────────────────────
   function normalizeApiBase(value) {
     const text = String(value || "").trim();
-    if (!text) {
-      return "";
-    }
-
-    return text.replace(/\/+$/, "");
+    return text ? text.replace(/\/+$/, "") : "";
   }
 
   function resolveApiBase() {
     try {
       const url = new URL(window.location.href);
       const queryValue = normalizeApiBase(url.searchParams.get("apiBase"));
-      if (queryValue) {
-        localStorage.setItem("lf_api_base", queryValue);
-        return queryValue;
-      }
+      if (queryValue) { localStorage.setItem("lf_api_base", queryValue); return queryValue; }
 
       const hostname = String(url.hostname || "").toLowerCase();
       if (hostname === "localhost" || hostname === "127.0.0.1") {
         localStorage.removeItem("lf_api_base");
         return "http://localhost:5001/api";
       }
-    } catch (error) {
-      // Ignore URL parsing failures and continue to other sources.
-    }
+    } catch (_) {}
 
-    const windowValue = normalizeApiBase(window.LF_API_BASE);
-    if (windowValue) {
-      return windowValue;
-    }
+    const win = normalizeApiBase(window.LF_API_BASE);
+    if (win) return win;
 
-    const metaTag = document.querySelector('meta[name="lf-api-base"]');
-    const metaValue = normalizeApiBase(metaTag && metaTag.content);
-    if (metaValue) {
-      return metaValue;
-    }
+    const meta = document.querySelector('meta[name="lf-api-base"]');
+    const metaVal = normalizeApiBase(meta && meta.content);
+    if (metaVal) return metaVal;
 
-    const storedValue = normalizeApiBase(localStorage.getItem("lf_api_base"));
-    if (storedValue) {
-      return storedValue;
-    }
+    const stored = normalizeApiBase(localStorage.getItem("lf_api_base"));
+    if (stored) return stored;
 
     return "https://findmystuff-backend-d16m.onrender.com/api";
   }
 
   const API_BASE = resolveApiBase();
+  const TOKEN_KEY    = "lf_auth_token";
+  const USER_KEY     = "lf_auth_user";
+  const USER_TS_KEY  = "lf_auth_user_ts";   // timestamp of last server sync
+  const FRESH_TTL_MS = 5 * 60 * 1000;       // 5 minutes — treat cached user as fresh
 
-  function getToken() {
-    return localStorage.getItem("lf_auth_token") || "";
-  }
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
 
   function clearAuthSession() {
-    [
-      "lf_auth_token",
-      "lf_auth_user",
-      "lf_profile_photo",
-      "lf_profile_image",
-      "lf_user_dp",
-      "lf_user_avatar",
-      "lf_prefill_email"
-    ].forEach(function (key) {
-      localStorage.removeItem(key);
-    });
-  }
-
-  function persistAuthSession(user, token) {
-    if (token) {
-      localStorage.setItem("lf_auth_token", token);
-    }
-
-    const profileImage = user && typeof user.profileImage === "string" ? user.profileImage.trim() : "";
-    const storedUser = user ? Object.assign({}, user) : null;
-    if (storedUser && profileImage && profileImage.startsWith("data:")) {
-      storedUser.profileImage = "";
-    }
-
-    if (storedUser) {
-      localStorage.setItem("lf_auth_user", JSON.stringify(storedUser));
-    }
-
-    if (profileImage && !profileImage.startsWith("data:")) {
-      localStorage.setItem("lf_profile_photo", profileImage);
-      localStorage.setItem("lf_profile_image", profileImage);
-      localStorage.setItem("lf_user_dp", profileImage);
-      localStorage.setItem("lf_user_avatar", profileImage);
-      return;
-    }
-
-    localStorage.removeItem("lf_profile_photo");
-    localStorage.removeItem("lf_profile_image");
-    localStorage.removeItem("lf_user_dp");
-    localStorage.removeItem("lf_user_avatar");
+    [TOKEN_KEY, USER_KEY, USER_TS_KEY,
+     "lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar","lf_prefill_email"]
+      .forEach(function (k) { localStorage.removeItem(k); });
   }
 
   function getStoredUser() {
-    const raw = localStorage.getItem("lf_auth_user");
-    if (!raw) {
-      return null;
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (_) { return null; }
+  }
+
+  function getUserAge() {
+    const ts = parseInt(localStorage.getItem(USER_TS_KEY) || "0", 10);
+    return ts ? Date.now() - ts : Infinity;
+  }
+
+  function persistAuthSession(user, token) {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+
+    const profileImage = user && typeof user.profileImage === "string" ? user.profileImage.trim() : "";
+    const stored = user ? Object.assign({}, user) : null;
+    if (stored && profileImage && profileImage.startsWith("data:")) stored.profileImage = "";
+
+    if (stored) {
+      localStorage.setItem(USER_KEY, JSON.stringify(stored));
+      localStorage.setItem(USER_TS_KEY, String(Date.now()));
     }
 
-    try {
-      return JSON.parse(raw);
-    } catch (error) {
-      return null;
+    if (profileImage && !profileImage.startsWith("data:")) {
+      ["lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar"]
+        .forEach(function (k) { localStorage.setItem(k, profileImage); });
+    } else {
+      ["lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar"]
+        .forEach(function (k) { localStorage.removeItem(k); });
     }
   }
 
-  async function authorizedFetch(path, options) {
+  function authorizedFetch(path, options) {
     const token = getToken();
-    const nextOptions = Object.assign({}, options || {});
-    nextOptions.headers = Object.assign({}, options && options.headers ? options.headers : {});
-
-    if (token) {
-      nextOptions.headers.Authorization = "Bearer " + token;
-    }
-
-    return fetch(API_BASE + path, nextOptions);
+    const opts  = Object.assign({}, options || {});
+    opts.headers = Object.assign({}, opts.headers || {});
+    if (token) opts.headers.Authorization = "Bearer " + token;
+    return fetch(API_BASE + path, opts);
   }
 
+  // ── bootstrapUserFromToken ───────────────────────────────────────────────
+  // Strategy: stale-while-revalidate
+  //   1. If localStorage has a FRESH user (< 5 min old) → return immediately (instant)
+  //   2. If localStorage has a STALE user → return it immediately, refresh in background
+  //   3. If no stored user → fetch from server and wait
   async function bootstrapUserFromToken() {
     const token = getToken();
-    if (!token) {
-      return null;
+    if (!token) return null;
+
+    const storedUser = getStoredUser();
+    const age = getUserAge();
+
+    // ── Case 1: Fresh enough — return immediately, no network call ──────────
+    if (storedUser && age < FRESH_TTL_MS) {
+      // Still revalidate silently in the background every 5 minutes to pick
+      // up block/role changes, but don't make the caller wait for it
+      if (age > FRESH_TTL_MS / 2) {
+        _revalidateInBackground();
+      }
+      return storedUser;
     }
 
+    // ── Case 2: Stale but have data — return it now, refresh asynchronously ─
+    if (storedUser) {
+      _revalidateInBackground();
+      return storedUser;
+    }
+
+    // ── Case 3: No local data — must fetch synchronously ─────────────────────
+    return await _fetchFromServer();
+  }
+
+  async function _fetchFromServer() {
     try {
       const response = await authorizedFetch("/auth/me");
-      const result = await response.json().catch(function () {
-        return {};
-      });
+      const result   = await response.json().catch(function () { return {}; });
 
-      // Blocked user — save the blocked state, do NOT clear session
       if (response.status === 403 && result.isBlocked) {
-        var storedUser = getStoredUser() || {};
-        storedUser.isBlocked = true;
-        storedUser.blockedAt = result.blockedAt || storedUser.blockedAt || null;
-        localStorage.setItem("lf_auth_user", JSON.stringify(storedUser));
-        return storedUser; // return the user with isBlocked=true so pages can show block UI
+        const s = getStoredUser() || {};
+        s.isBlocked = true;
+        s.blockedAt = result.blockedAt || s.blockedAt || null;
+        localStorage.setItem(USER_KEY, JSON.stringify(s));
+        localStorage.setItem(USER_TS_KEY, String(Date.now()));
+        return s;
       }
 
       if (!response.ok || !result.user) {
@@ -145,32 +137,32 @@
         return null;
       }
 
-      persistAuthSession(result.user, token);
+      persistAuthSession(result.user, getToken());
       return result.user;
-    } catch (error) {
+    } catch (_) {
+      // Network error — return whatever we have locally
       return getStoredUser();
     }
   }
 
+  function _revalidateInBackground() {
+    _fetchFromServer().catch(function () {});
+  }
+
+  // Expose
   window.LFAuth = {
-    API_BASE: API_BASE,
-    resolveApiBase: resolveApiBase,
-    setApiBase: function (value) {
-      const nextValue = normalizeApiBase(value);
-      if (!nextValue) {
-        localStorage.removeItem("lf_api_base");
-        return;
-      }
-      localStorage.setItem("lf_api_base", nextValue);
+    API_BASE            : API_BASE,
+    resolveApiBase      : resolveApiBase,
+    setApiBase          : function (v) {
+      const n = normalizeApiBase(v);
+      if (n) localStorage.setItem("lf_api_base", n); else localStorage.removeItem("lf_api_base");
     },
-    clearApiBase: function () {
-      localStorage.removeItem("lf_api_base");
-    },
-    getToken: getToken,
-    getStoredUser: getStoredUser,
-    persistAuthSession: persistAuthSession,
-    clearAuthSession: clearAuthSession,
-    authorizedFetch: authorizedFetch,
+    clearApiBase        : function () { localStorage.removeItem("lf_api_base"); },
+    getToken            : getToken,
+    getStoredUser       : getStoredUser,
+    persistAuthSession  : persistAuthSession,
+    clearAuthSession    : clearAuthSession,
+    authorizedFetch     : authorizedFetch,
     bootstrapUserFromToken: bootstrapUserFromToken
   };
 }());
