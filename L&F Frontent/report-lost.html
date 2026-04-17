@@ -228,6 +228,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     window.location.href = "login.html";
     return;
   }
+  // Blocked user — show overlay instead of form
+  if (user.isBlocked) {
+    var ov = document.getElementById('blockedOverlay');
+    if (ov) ov.style.display = 'flex';
+    document.getElementById('lostReportForm').style.display = 'none';
+    return;
+  }
   applyUserToForm(user);
 });
 
@@ -305,6 +312,13 @@ form.addEventListener("submit", async function (event) {
     }));
     window.location.href = "index.html";
   } catch (error) {
+    // If blocked mid-session, show block overlay
+    if (error.isBlocked) {
+      var ov = document.getElementById('blockedOverlay');
+      if (ov) ov.style.display = 'flex';
+      document.getElementById('lostReportForm').style.display = 'none';
+      return;
+    }
     console.error("Failed to submit lost item report:", error);
     showStatus(error.message || "Could not submit report. Please try again.", "error");
   } finally {

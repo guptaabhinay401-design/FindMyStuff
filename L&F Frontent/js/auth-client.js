@@ -131,6 +131,15 @@
         return {};
       });
 
+      // Blocked user — save the blocked state, do NOT clear session
+      if (response.status === 403 && result.isBlocked) {
+        var storedUser = getStoredUser() || {};
+        storedUser.isBlocked = true;
+        storedUser.blockedAt = result.blockedAt || storedUser.blockedAt || null;
+        localStorage.setItem("lf_auth_user", JSON.stringify(storedUser));
+        return storedUser; // return the user with isBlocked=true so pages can show block UI
+      }
+
       if (!response.ok || !result.user) {
         clearAuthSession();
         return null;

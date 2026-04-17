@@ -166,13 +166,18 @@
     const response = await fetch(API_BASE + path, nextOptions);
     if (!response.ok) {
       let message = "API request failed for " + path;
+      let isBlocked = false;
       try {
         const errorBody = await response.json();
         message = errorBody.message || errorBody.error || message;
+        isBlocked = response.status === 403 && errorBody.isBlocked === true;
       } catch (error) {
         message = "API request failed for " + path;
       }
-      throw new Error(message);
+      const err = new Error(message);
+      err.isBlocked = isBlocked;
+      err.statusCode = response.status;
+      throw err;
     }
     return response.json();
   }
