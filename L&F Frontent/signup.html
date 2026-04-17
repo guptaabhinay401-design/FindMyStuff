@@ -3,309 +3,732 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Create your FindMyStuff account to report and find lost items on campus.">
 <title>Sign Up | FindMyStuff</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand: #1d4ed8;
+    --brand-hover: #1e40af;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --ink2: #475569;
+    --muted: #94a3b8;
+    --border: #e2e8f0;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,.08);
+    --red: #dc2626;
+    --green: #16a34a;
+    --transition: 0.18s ease;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 440px;
+    padding: 2.25rem 2rem;
+    animation: fadeUp 0.35s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { opacity: .75; }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--brand);
+    margin-bottom: 1.25rem;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--brand);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .9rem;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 800; color: var(--ink); margin-bottom: .3rem; }
+  .subtitle { font-size: .875rem; color: var(--ink2); margin-bottom: 1.5rem; }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 1.75rem;
+  }
+  .step {
+    display: flex; align-items: center; gap: .4rem;
+    font-size: .78rem; font-weight: 600; color: var(--muted);
+    flex: 1;
+  }
+  .step-dot {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+    background: #fff; color: var(--muted);
+    flex-shrink: 0; transition: var(--transition);
+  }
+  .step.active .step-dot { border-color: var(--brand); background: var(--brand); color: #fff; }
+  .step.active { color: var(--brand); }
+  .step.done .step-dot { border-color: var(--green); background: var(--green); color: #fff; }
+  .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 .4rem; transition: var(--transition); }
+  .step-line.done { background: var(--green); }
+
+  /* Alert */
+  .alert {
+    display: none;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    font-size: .85rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+  }
+  .alert.show { display: block; }
+  .alert-error { background: #fef2f2; border-color: #fecaca; color: var(--red); }
+  .alert-success { background: #f0fdf4; border-color: #bbf7d0; color: var(--green); }
+  .alert-info { background: #eff6ff; border-color: #bfdbfe; color: var(--brand); }
+
+  /* Form */
+  .form-group { margin-bottom: 1rem; }
+  .form-label {
+    display: block; font-size: .8rem; font-weight: 600;
+    color: var(--ink2); margin-bottom: .35rem;
+  }
+  .input-wrap { position: relative; }
+  .form-input {
+    width: 100%;
+    padding: .7rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .9rem;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fff;
+    transition: var(--transition);
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+  .form-input.has-icon { padding-left: 2.6rem; }
+  .input-icon {
+    position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .85rem; pointer-events: none;
+  }
+  .pw-toggle {
+    position: absolute; right: .85rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: .85rem; padding: .2rem;
+  }
+  .pw-toggle:hover { color: var(--brand); }
+
+  /* OTP input */
+  .otp-inputs {
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    margin: 1.25rem 0;
+  }
+  .otp-digit {
+    width: 48px; height: 56px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-family: inherit;
+    outline: none;
+    transition: var(--transition);
+  }
+  .otp-digit:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+  .otp-digit.filled { border-color: var(--brand); background: #eff6ff; }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: .8rem 1rem;
+    border-radius: var(--radius);
+    font-size: .9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+  }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+  .btn-google {
+    background: #fff;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    margin-top: .5rem;
+  }
+  .btn-google:hover { background: #f8fafc; border-color: #94a3b8; }
+  .btn-google img { width: 18px; height: 18px; }
+
+  .divider {
+    display: flex; align-items: center; gap: .75rem;
+    margin: 1.25rem 0; color: var(--muted); font-size: .8rem;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Timer */
+  .resend-row {
+    text-align: center; font-size: .83rem; color: var(--ink2);
+    margin-top: .75rem;
+  }
+  .resend-btn {
+    background: none; border: none; color: var(--brand);
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    font-size: .83rem; padding: 0;
+  }
+  .resend-btn:disabled { color: var(--muted); cursor: default; }
+
+  /* Dev OTP box */
+  .dev-box {
+    display: none;
+    background: #fefce8;
+    border: 1px dashed #fbbf24;
+    border-radius: 10px;
+    padding: .75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: .82rem;
+    color: #92400e;
+  }
+  .dev-box.show { display: block; }
+  .dev-otp { font-size: 1.5rem; font-weight: 800; letter-spacing: 4px; color: #b45309; }
+
+  .footer-text {
+    text-align: center;
+    font-size: .83rem;
+    color: var(--ink2);
+    margin-top: 1.25rem;
+  }
+  .footer-text a { color: var(--brand); font-weight: 600; text-decoration: none; }
+  .footer-text a:hover { text-decoration: underline; }
+
+  @media (max-width: 480px) {
+    .card { padding: 1.75rem 1.25rem; }
+    .otp-digit { width: 42px; height: 50px; font-size: 1.2rem; }
+  }
+</style>
 </head>
+<body>
 
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center p-6">
+<div class="card">
+  <a href="index.html" class="back-link">
+    <i class="fa-solid fa-arrow-left" style="font-size:.75rem;"></i> Back to Home
+  </a>
 
-<div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl">
+  <div class="logo">
+    <div class="logo-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+    FindMyStuff
+  </div>
 
-    <!-- Back -->
-    <a href="index.html" class="text-sm text-blue-600 font-medium">
-        ← Back to Home
-    </a>
-
-    <!-- Heading -->
-    <div class="text-center mt-4">
-        <h2 class="text-3xl font-bold text-[#1e3a8a]">Create Account</h2>
-        <p class="text-gray-500 text-sm mt-1">Join the FindMyStuff system</p>
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step active" id="step1Indicator">
+      <div class="step-dot">1</div>
+      <span>Your Info</span>
     </div>
+    <div class="step-line" id="stepLine"></div>
+    <div class="step" id="step2Indicator">
+      <div class="step-dot">2</div>
+      <span>Verify Email</span>
+    </div>
+  </div>
 
-    <!-- Email & Mobile Signup -->
-    <form id="signupForm" class="mt-6 space-y-4">
+  <div id="alertBox" class="alert" role="status" aria-live="polite"></div>
+  <div id="devBox" class="dev-box">
+    <div style="font-weight:600;margin-bottom:.3rem;">⚠️ Dev Mode — SMTP not configured</div>
+    <div>Your OTP: <span class="dev-otp" id="devOtpDisplay"></span></div>
+  </div>
 
-        <div id="signupStatus" class="hidden rounded-lg border px-4 py-2 text-sm font-medium" role="status" aria-live="polite"></div>
+  <!-- ── STEP 1: Registration Form ── -->
+  <div id="step1">
+    <h1>Create Account</h1>
+    <p class="subtitle">Join FindMyStuff to report and find lost items</p>
 
-        <!-- Full Name -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Full Name</label>
-            <input id="fullName" type="text" required
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Enter your name">
+    <form id="signupForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="fullName">Full Name</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-user input-icon"></i>
+          <input class="form-input has-icon" type="text" id="fullName"
+            placeholder="Enter your full name" autocomplete="name" required>
         </div>
+      </div>
 
-        <!-- Email -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Email</label>
-            <input id="email" type="email" required
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Enter your email">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-envelope input-icon"></i>
+          <input class="form-input has-icon" type="email" id="email"
+            placeholder="Enter your email" autocomplete="email" required>
         </div>
+      </div>
 
-        <!-- Mobile -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Mobile Number</label>
-            <input id="mobile" type="tel" required
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="+91 9999999999">
+      <div class="form-group">
+        <label class="form-label" for="mobile">Mobile Number <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-phone input-icon"></i>
+          <input class="form-input has-icon" type="tel" id="mobile"
+            placeholder="+91 9999999999" autocomplete="tel">
         </div>
+      </div>
 
-        <!-- Password -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Password</label>
-            <div class="relative">
-                <input id="password" type="password" required minlength="6"
-                class="w-full rounded-lg border px-4 py-2 pr-11 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Create password">
-                <button id="togglePassword" type="button" class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-blue-600" aria-label="Show password">
-                    <i class="fa-solid fa-eye"></i>
-                </button>
-            </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock input-icon"></i>
+          <input class="form-input has-icon" type="password" id="password"
+            placeholder="Min 6 characters" autocomplete="new-password" minlength="6" required>
+          <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">
+            <i class="fa-solid fa-eye"></i>
+          </button>
         </div>
+      </div>
 
-        <!-- Sign Up Button -->
-        <button id="signupBtn" type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
-            Sign Up
-        </button>
-
+      <button type="submit" class="btn btn-primary" id="sendOtpBtn">
+        <i class="fa-solid fa-paper-plane"></i>
+        Send Verification OTP
+      </button>
     </form>
 
-    <!-- Divider -->
-    <div class="flex items-center my-6">
-        <div class="flex-1 border-b"></div>
-        <span class="px-3 text-gray-400 text-sm">OR</span>
-        <div class="flex-1 border-b"></div>
-    </div>
+    <div class="divider">or</div>
 
-    <!-- Social Login -->
-    <div class="space-y-3">
+    <button class="btn btn-google" id="googleSignupBtn" type="button">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continue with Google
+    </button>
 
-        <button id="googleSignupBtn" type="button" class="w-full flex items-center justify-center gap-3 border py-2.5 rounded-lg hover:bg-gray-50 transition">
-            <i class="fa-brands fa-google text-red-500 text-lg"></i>
-            Continue with Google
-        </button>
-
-        <button id="appleSignupBtn" type="button" class="w-full flex items-center justify-center gap-3 border py-2.5 rounded-lg hover:bg-gray-50 transition">
-            <i class="fa-brands fa-apple text-black text-lg"></i>
-            Continue with Apple
-        </button>
-
-    </div>
-
-    <!-- Already Have Account -->
-    <p class="text-center text-sm text-gray-500 mt-6">
-        Already have an account?
-        <a href="login.html" class="text-blue-600 font-medium hover:underline">
-            Login
-        </a>
+    <p class="footer-text">
+      Already have an account? <a href="login.html">Sign in</a>
     </p>
+  </div>
 
+  <!-- ── STEP 2: OTP Verification ── -->
+  <div id="step2" style="display:none;">
+    <h1>Verify Email</h1>
+    <p class="subtitle" id="otpSubtitle">OTP sent to your email. Enter it below.</p>
+
+    <div class="otp-inputs" id="otpInputs">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp0" autocomplete="one-time-code">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp1">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp2">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp3">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp4">
+      <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" id="otp5">
+    </div>
+
+    <button class="btn btn-primary" id="verifyOtpBtn" type="button" disabled>
+      <i class="fa-solid fa-circle-check"></i>
+      Verify & Create Account
+    </button>
+
+    <div class="resend-row">
+      <span id="timerText">Resend OTP in <strong id="timerCount">60</strong>s</span>
+      <button class="resend-btn" id="resendBtn" style="display:none;" type="button">
+        Resend OTP
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:1rem;">
+      <button type="button" id="backToStep1Btn" style="background:none;border:none;color:var(--brand);font-size:.83rem;font-weight:600;cursor:pointer;font-family:inherit;">
+        <i class="fa-solid fa-arrow-left" style="font-size:.7rem;"></i> Change email
+      </button>
+    </div>
+  </div>
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="js/auth-client.js"></script>
 <script>
-const signupForm = document.getElementById("signupForm");
-const signupStatus = document.getElementById("signupStatus");
-const signupBtn = document.getElementById("signupBtn");
-const passwordInput = document.getElementById("password");
-const togglePasswordBtn = document.getElementById("togglePassword");
-const googleSignupBtn = document.getElementById("googleSignupBtn");
-const appleSignupBtn = document.getElementById("appleSignupBtn");
 const API_BASE = window.LFAuth.API_BASE;
 
-function showStatus(message, type) {
-    signupStatus.textContent = message;
-    signupStatus.className = "rounded-lg border px-4 py-2 text-sm font-medium";
+// ── DOM refs ──────────────────────────────────────────
+const alertBox        = document.getElementById('alertBox');
+const devBox          = document.getElementById('devBox');
+const devOtpDisplay   = document.getElementById('devOtpDisplay');
+const step1El         = document.getElementById('step1');
+const step2El         = document.getElementById('step2');
+const step1Ind        = document.getElementById('step1Indicator');
+const step2Ind        = document.getElementById('step2Indicator');
+const stepLine        = document.getElementById('stepLine');
+const signupForm      = document.getElementById('signupForm');
+const sendOtpBtn      = document.getElementById('sendOtpBtn');
+const verifyOtpBtn    = document.getElementById('verifyOtpBtn');
+const resendBtn       = document.getElementById('resendBtn');
+const timerText       = document.getElementById('timerText');
+const timerCount      = document.getElementById('timerCount');
+const backToStep1Btn  = document.getElementById('backToStep1Btn');
+const pwToggle        = document.getElementById('pwToggle');
+const otpDigits       = Array.from(document.querySelectorAll('.otp-digit'));
 
-    if (type === "success") {
-        signupStatus.classList.add("border-green-200", "bg-green-50", "text-green-700");
-        return;
-    }
+let timerInterval = null;
 
-    if (type === "error") {
-        signupStatus.classList.add("border-red-200", "bg-red-50", "text-red-700");
-        return;
-    }
-
-    signupStatus.classList.add("border-blue-200", "bg-blue-50", "text-blue-700");
+// ── Alert ─────────────────────────────────────────────
+function showAlert(msg, type) {
+  alertBox.textContent = msg;
+  alertBox.className = 'alert show alert-' + type;
+}
+function clearAlert() {
+  alertBox.className = 'alert';
+  alertBox.textContent = '';
 }
 
-signupForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    signupBtn.disabled = true;
-    signupBtn.textContent = "Creating account...";
-    showStatus("Submitting your details...", "info");
-
-    const payload = {
-        name: document.getElementById("fullName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        mobile: document.getElementById("mobile").value.trim(),
-        password: document.getElementById("password").value
-    };
-
-    try {
-        const response = await fetch(API_BASE + "/auth/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json().catch(function () {
-            return {};
-        });
-
-        if (!response.ok) {
-            throw new Error(result.message || "Sign up failed");
-        }
-
-        window.LFAuth.persistAuthSession(result.user, result.token);
-        showStatus("Account created successfully. Redirecting...", "success");
-        setTimeout(function () {
-            window.location.href = "index.html";
-        }, 900);
-    } catch (error) {
-        showStatus(error.message || "Could not create account.", "error");
-    } finally {
-        signupBtn.disabled = false;
-        signupBtn.textContent = "Sign Up";
-    }
+// ── Password toggle ───────────────────────────────────
+pwToggle.addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  pwToggle.innerHTML = '<i class="fa-solid ' + (isText ? 'fa-eye' : 'fa-eye-slash') + '"></i>';
 });
 
-togglePasswordBtn.addEventListener("click", function () {
-    const isPassword = passwordInput.type === "password";
-    passwordInput.type = isPassword ? "text" : "password";
-    togglePasswordBtn.innerHTML = '<i class="fa-solid ' + (isPassword ? "fa-eye-slash" : "fa-eye") + '"></i>';
-    togglePasswordBtn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+// ── OTP digit input behaviour ─────────────────────────
+otpDigits.forEach(function(input, idx) {
+  input.addEventListener('input', function() {
+    const val = input.value.replace(/\D/g, '');
+    input.value = val.slice(-1);
+    input.classList.toggle('filled', !!input.value);
+
+    if (input.value && idx < 5) otpDigits[idx + 1].focus();
+    checkOtpComplete();
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !input.value && idx > 0) {
+      otpDigits[idx - 1].focus();
+      otpDigits[idx - 1].value = '';
+      otpDigits[idx - 1].classList.remove('filled');
+    }
+  });
+
+  input.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    pasted.split('').slice(0, 6).forEach(function(ch, i) {
+      if (otpDigits[i]) {
+        otpDigits[i].value = ch;
+        otpDigits[i].classList.add('filled');
+      }
+    });
+    checkOtpComplete();
+    if (pasted.length >= 6) otpDigits[5].focus();
+  });
 });
 
-async function loginWithGoogleCredential(credential) {
-    showStatus("Completing Google sign up...", "info");
-
-    const response = await fetch(API_BASE + "/auth/oauth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credential })
-    });
-
-    const result = await response.json().catch(function () {
-        return {};
-    });
-
-    if (!response.ok) {
-        throw new Error(result.message || "Google sign up failed");
-    }
-
-    window.LFAuth.persistAuthSession(result.user, result.token);
-    window.location.href = "index.html";
+function getOtpValue() {
+  return otpDigits.map(d => d.value).join('');
 }
 
-async function loginWithGoogleSimulation() {
-    const seededEmail = document.getElementById("email").value.trim();
-    const email = seededEmail || window.prompt("Google OAuth backend client ID missing. Enter email for development Google sign-in:");
-    if (!email) {
-        return;
-    }
-
-    const name = document.getElementById("fullName").value.trim() || email.split("@")[0] || "Google User";
-
-    showStatus("Completing development Google sign up...", "info");
-    const response = await fetch(API_BASE + "/auth/oauth/google/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            email: email.trim(),
-            name: name
-        })
-    });
-
-    const result = await response.json().catch(function () {
-        return {};
-    });
-
-    if (!response.ok) {
-        throw new Error(result.message || "Google sign up failed");
-    }
-
-    window.LFAuth.persistAuthSession(result.user, result.token);
-    window.location.href = "index.html";
+function checkOtpComplete() {
+  verifyOtpBtn.disabled = getOtpValue().length < 6;
 }
 
-googleSignupBtn.addEventListener("click", async function () {
-    try {
-        const configResponse = await fetch(API_BASE + "/auth/oauth/config");
-        const config = await configResponse.json().catch(function () {
-            return {};
-        });
+function clearOtpInputs() {
+  otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
+  verifyOtpBtn.disabled = true;
+}
 
-        if (!config.googleClientId) {
-            if (config.googleSimulationEnabled) {
-                await loginWithGoogleSimulation();
-                return;
-            }
-            throw new Error("Google OAuth is not configured on the server");
-        }
+// ── Timer ─────────────────────────────────────────────
+function startResendTimer() {
+  clearInterval(timerInterval);
+  let seconds = 60;
+  timerCount.textContent = seconds;
+  timerText.style.display = '';
+  resendBtn.style.display = 'none';
 
-        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-            throw new Error("Google Identity Services failed to load");
-        }
-
-        window.google.accounts.id.initialize({
-            client_id: config.googleClientId,
-            callback: function (response) {
-                loginWithGoogleCredential(response.credential).catch(function (error) {
-                    showStatus(error.message || "Google sign up failed", "error");
-                });
-            }
-        });
-        window.google.accounts.id.prompt();
-    } catch (error) {
-        showStatus(error.message || "Google sign up failed", "error");
+  timerInterval = setInterval(function() {
+    seconds--;
+    timerCount.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timerInterval);
+      timerText.style.display = 'none';
+      resendBtn.style.display = 'inline';
     }
+  }, 1000);
+}
+
+// ── Go to step 2 ──────────────────────────────────────
+function showStep2() {
+  step1El.style.display = 'none';
+  step2El.style.display = 'block';
+
+  step1Ind.classList.remove('active');
+  step1Ind.classList.add('done');
+  step1Ind.querySelector('.step-dot').innerHTML = '<i class="fa-solid fa-check" style="font-size:.6rem;"></i>';
+  stepLine.classList.add('done');
+  step2Ind.classList.add('active');
+
+  const email = document.getElementById('email').value.trim();
+  document.getElementById('otpSubtitle').textContent = 'We sent a 6-digit OTP to ' + email;
+
+  clearOtpInputs();
+  clearAlert();
+  devBox.classList.remove('show');
+  startResendTimer();
+  setTimeout(() => otpDigits[0].focus(), 100);
+}
+
+// ── Go back to step 1 ─────────────────────────────────
+backToStep1Btn.addEventListener('click', function() {
+  clearInterval(timerInterval);
+  step2El.style.display = 'none';
+  step1El.style.display = 'block';
+
+  step1Ind.classList.remove('done');
+  step1Ind.classList.add('active');
+  step1Ind.querySelector('.step-dot').textContent = '1';
+  stepLine.classList.remove('done');
+  step2Ind.classList.remove('active');
+
+  clearAlert();
+  devBox.classList.remove('show');
 });
 
-appleSignupBtn.addEventListener("click", async function () {
-    const seededEmail = document.getElementById("email").value.trim();
-    const email = seededEmail || window.prompt("Enter the email for Apple sign-in simulation:");
-    if (!email) {
+// ── STEP 1: Send OTP ──────────────────────────────────
+signupForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearAlert();
+
+  const name     = document.getElementById('fullName').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const mobile   = document.getElementById('mobile').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!name) return showAlert('Please enter your full name.', 'error');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return showAlert('Please enter a valid email address.', 'error');
+  }
+  if (!password || password.length < 6) {
+    return showAlert('Password must be at least 6 characters.', 'error');
+  }
+
+  sendOtpBtn.disabled = true;
+  sendOtpBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending OTP...';
+
+  try {
+    const res  = await fetch(API_BASE + '/auth/send-signup-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, mobile, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Could not send OTP');
+
+    showStep2();
+    showAlert('OTP sent! Check your inbox (and spam folder).', 'success');
+
+    // Dev mode: show OTP on screen
+    if (data.devOtp) {
+      devOtpDisplay.textContent = data.devOtp;
+      devBox.classList.add('show');
+      // Auto-fill dev OTP
+      data.devOtp.split('').forEach((ch, i) => {
+        if (otpDigits[i]) { otpDigits[i].value = ch; otpDigits[i].classList.add('filled'); }
+      });
+      checkOtpComplete();
+    }
+  } catch (err) {
+    showAlert(err.message || 'Could not send OTP. Please try again.', 'error');
+  } finally {
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification OTP';
+  }
+});
+
+// ── STEP 2: Verify OTP + create account ───────────────
+verifyOtpBtn.addEventListener('click', async function() {
+  const otp      = getOtpValue();
+  const name     = document.getElementById('fullName').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const mobile   = document.getElementById('mobile').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (otp.length < 6) return showAlert('Please enter the complete 6-digit OTP.', 'error');
+  clearAlert();
+
+  verifyOtpBtn.disabled = true;
+  verifyOtpBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+  try {
+    const res  = await fetch(API_BASE + '/auth/verify-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, mobile, password, otp })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Verification failed');
+
+    // Auto-login
+    window.LFAuth.persistAuthSession(data.user, data.token);
+    showAlert('Account created successfully! Redirecting...', 'success');
+    clearInterval(timerInterval);
+
+    sessionStorage.setItem('lf_toast', JSON.stringify({
+      type: 'login',
+      title: 'Welcome to FindMyStuff! 🎉',
+      message: 'Your account has been verified and you are now logged in.'
+    }));
+    setTimeout(() => { window.location.href = 'index.html'; }, 900);
+  } catch (err) {
+    showAlert(err.message || 'Invalid OTP. Please try again.', 'error');
+    verifyOtpBtn.disabled = false;
+    verifyOtpBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verify & Create Account';
+  }
+});
+
+// ── Resend OTP ────────────────────────────────────────
+resendBtn.addEventListener('click', async function() {
+  const name     = document.getElementById('fullName').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const mobile   = document.getElementById('mobile').value.trim();
+  const password = document.getElementById('password').value;
+
+  resendBtn.disabled = true;
+  clearAlert();
+  clearOtpInputs();
+  devBox.classList.remove('show');
+
+  try {
+    const res  = await fetch(API_BASE + '/auth/send-signup-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, mobile, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Could not resend OTP');
+
+    showAlert('New OTP sent to ' + email, 'success');
+    startResendTimer();
+
+    if (data.devOtp) {
+      devOtpDisplay.textContent = data.devOtp;
+      devBox.classList.add('show');
+      data.devOtp.split('').forEach((ch, i) => {
+        if (otpDigits[i]) { otpDigits[i].value = ch; otpDigits[i].classList.add('filled'); }
+      });
+      checkOtpComplete();
+    }
+  } catch (err) {
+    showAlert(err.message || 'Could not resend OTP.', 'error');
+  } finally {
+    resendBtn.disabled = false;
+  }
+});
+
+// ── Google Login ──────────────────────────────────────
+async function handleGoogleCredential(credential) {
+  clearAlert();
+  showAlert('Completing Google sign in...', 'info');
+  try {
+    const res  = await fetch(API_BASE + '/auth/oauth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Google sign in failed');
+
+    window.LFAuth.persistAuthSession(data.user, data.token);
+    sessionStorage.setItem('lf_toast', JSON.stringify({
+      type: 'login', title: 'Welcome! 👋', message: 'You are now signed in via Google.'
+    }));
+    window.location.href = 'index.html';
+  } catch (err) {
+    showAlert(err.message || 'Google sign in failed.', 'error');
+  }
+}
+
+document.getElementById('googleSignupBtn').addEventListener('click', async function() {
+  try {
+    const cfgRes = await fetch(API_BASE + '/auth/oauth/config');
+    const cfg    = await cfgRes.json().catch(() => ({}));
+
+    if (!cfg.googleClientId) {
+      if (cfg.googleSimulationEnabled) {
+        const email = document.getElementById('email').value.trim() ||
+          window.prompt('Dev Mode: Enter Gmail for Google sign-in:');
+        if (!email) return;
+        const name = document.getElementById('fullName').value.trim() || email.split('@')[0];
+        const res  = await fetch(API_BASE + '/auth/oauth/google/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Google sign in failed');
+        window.LFAuth.persistAuthSession(data.user, data.token);
+        sessionStorage.setItem('lf_toast', JSON.stringify({
+          type: 'login', title: 'Welcome! 👋', message: 'Signed in via Google.'
+        }));
+        window.location.href = 'index.html';
         return;
+      }
+      throw new Error('Google OAuth is not configured on this server.');
     }
 
-    const name = document.getElementById("fullName").value.trim() || email.split("@")[0] || "Apple User";
-
-    try {
-        showStatus("Completing Apple sign-up...", "info");
-        const response = await fetch(API_BASE + "/auth/oauth/apple/simulate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email.trim(), name: name })
-        });
-
-        const result = await response.json().catch(function () {
-            return {};
-        });
-
-        if (!response.ok) {
-            throw new Error(result.message || "Apple sign up failed");
-        }
-
-        window.LFAuth.persistAuthSession(result.user, result.token);
-        window.location.href = "index.html";
-    } catch (error) {
-        showStatus(error.message || "Apple sign up failed", "error");
+    if (!window.google || !window.google.accounts) {
+      throw new Error('Google Sign-In library failed to load. Please refresh the page.');
     }
+    window.google.accounts.id.initialize({
+      client_id: cfg.googleClientId,
+      callback: (resp) => handleGoogleCredential(resp.credential).catch(err => showAlert(err.message, 'error'))
+    });
+    window.google.accounts.id.prompt();
+  } catch (err) {
+    showAlert(err.message || 'Google sign in failed.', 'error');
+  }
 });
 
-document.addEventListener("DOMContentLoaded", async function () {
-    const user = await window.LFAuth.bootstrapUserFromToken();
-    if (user) {
-        window.location.href = "index.html";
-    }
+// ── Already logged in? ────────────────────────────────
+document.addEventListener('DOMContentLoaded', async function() {
+  const user = await window.LFAuth.bootstrapUserFromToken();
+  if (user && !user.isBlocked) {
+    window.location.href = 'index.html';
+  }
 });
 </script>
-
 </body>
 </html>

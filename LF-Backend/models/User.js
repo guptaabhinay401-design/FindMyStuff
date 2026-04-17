@@ -43,7 +43,7 @@ const UserSchema = new mongoose.Schema({
 
     oauthProvider: {
         type: String,
-        enum: ["", "google", "apple"],
+        enum: ["", "google"],
         default: ""
     },
 
@@ -78,6 +78,12 @@ const UserSchema = new mongoose.Schema({
     blockedAt: {
         type: Date,
         default: null
+    },
+
+    // Whether the email has been verified via OTP
+    isVerified: {
+        type: Boolean,
+        default: false
     },
 
     // User creation time

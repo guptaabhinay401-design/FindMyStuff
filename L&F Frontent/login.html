@@ -85,11 +85,6 @@
             <i class="fa-brands fa-google text-red-500 text-lg"></i>
             Continue with Google
         </button>
-
-        <button id="appleLoginBtn" type="button" class="w-full flex items-center justify-center gap-3 border py-2.5 rounded-lg hover:bg-gray-50 transition">
-            <i class="fa-brands fa-apple text-black text-lg"></i>
-            Continue with Apple
-        </button>
     </div>
 
     <!-- Signup -->
@@ -119,8 +114,6 @@ const loginBtn = document.getElementById("loginBtn");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const togglePasswordBtn = document.getElementById("togglePassword");
-const googleLoginBtn = document.getElementById("googleLoginBtn");
-const appleLoginBtn = document.getElementById("appleLoginBtn");
 const API_BASE = window.LFAuth.API_BASE;
 
 const prefillEmail = localStorage.getItem("lf_prefill_email");
@@ -292,50 +285,12 @@ googleLoginBtn.addEventListener("click", async function () {
     }
 });
 
-appleLoginBtn.addEventListener("click", async function () {
-    const seededEmail = emailInput.value.trim();
-    const email = seededEmail || window.prompt("Enter the email for Apple sign-in simulation:");
-    if (!email) {
-        return;
-    }
-
-    const name = email.split("@")[0] || "Apple User";
-
-    try {
-        showStatus("Completing Apple sign-in...", "info");
-        const response = await fetch(API_BASE + "/auth/oauth/apple/simulate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email.trim(), name: name.trim() })
-        });
-
-        const result = await response.json().catch(function () {
-            return {};
-        });
-
-        if (!response.ok) {
-            throw new Error(result.message || "Apple sign-in failed");
-        }
-
-        window.LFAuth.persistAuthSession(result.user, result.token);
-        sessionStorage.setItem("lf_toast", JSON.stringify({
-            type: "login",
-            title: "Welcome back! 👋",
-            message: "You have successfully logged in to FindMyStuff."
-        }));
-        window.location.href = "index.html";
-    } catch (error) {
-        showStatus(error.message || "Apple sign-in failed", "error");
-    }
-});
-
 document.addEventListener("DOMContentLoaded", async function () {
     const user = await window.LFAuth.bootstrapUserFromToken();
-    if (user) {
+    if (user && !user.isBlocked) {
         window.location.href = "index.html";
     }
 });
 </script>
-
 </body>
 </html>
