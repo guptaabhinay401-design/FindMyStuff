@@ -3,293 +3,423 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Login | FindMyStuff</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta name="description" content="Sign in to your FindMyStuff account to report and find lost items on campus.">
+<title>Sign In | FindMyStuff</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand: #1d4ed8;
+    --brand-hover: #1e40af;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --ink2: #475569;
+    --muted: #94a3b8;
+    --border: #e2e8f0;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,.08);
+    --red: #dc2626;
+    --green: #16a34a;
+    --transition: 0.18s ease;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 440px;
+    padding: 2.25rem 2rem;
+    animation: fadeUp 0.35s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { opacity: .75; }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--brand);
+    margin-bottom: 1.25rem;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--brand);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .9rem;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 800; color: var(--ink); margin-bottom: .3rem; }
+  .subtitle { font-size: .875rem; color: var(--ink2); margin-bottom: 1.5rem; }
+
+  /* Alert */
+  .alert {
+    display: none;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    font-size: .85rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+  }
+  .alert.show { display: block; }
+  .alert-error   { background: #fef2f2; border-color: #fecaca; color: var(--red); }
+  .alert-success { background: #f0fdf4; border-color: #bbf7d0; color: var(--green); }
+  .alert-info    { background: #eff6ff; border-color: #bfdbfe; color: var(--brand); }
+
+  /* Form */
+  .form-group { margin-bottom: 1rem; }
+  .form-label {
+    display: block; font-size: .8rem; font-weight: 600;
+    color: var(--ink2); margin-bottom: .35rem;
+  }
+  .input-wrap { position: relative; }
+  .form-input {
+    width: 100%;
+    padding: .7rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .9rem;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fff;
+    transition: var(--transition);
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+  .form-input.has-icon { padding-left: 2.6rem; }
+  .input-icon {
+    position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .85rem; pointer-events: none;
+  }
+  .pw-toggle {
+    position: absolute; right: .85rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: .85rem; padding: .2rem;
+  }
+  .pw-toggle:hover { color: var(--brand); }
+
+  /* Forgot row */
+  .forgot-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -.4rem;
+    margin-bottom: .75rem;
+  }
+  .forgot-link {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
+  }
+  .forgot-link:hover { text-decoration: underline; }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: .8rem 1rem;
+    border-radius: var(--radius);
+    font-size: .9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+  }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+  .btn-google {
+    background: #fff;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    margin-top: .5rem;
+  }
+  .btn-google:hover { background: #f8fafc; border-color: #94a3b8; }
+  .btn-google img { width: 18px; height: 18px; }
+
+  .divider {
+    display: flex; align-items: center; gap: .75rem;
+    margin: 1.25rem 0; color: var(--muted); font-size: .8rem;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .footer-text {
+    text-align: center;
+    font-size: .83rem;
+    color: var(--ink2);
+    margin-top: 1.25rem;
+  }
+  .footer-text a { color: var(--brand); font-weight: 600; text-decoration: none; }
+  .footer-text a:hover { text-decoration: underline; }
+
+  .admin-link {
+    display: block;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: .75rem;
+    text-decoration: none;
+  }
+  .admin-link:hover { color: var(--brand); }
+
+  @media (max-width: 480px) {
+    .card { padding: 1.75rem 1.25rem; }
+  }
+</style>
 </head>
+<body>
 
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center p-6">
+<div class="card">
+  <a href="index.html" class="back-link">
+    <i class="fa-solid fa-arrow-left" style="font-size:.75rem;"></i> Back to Home
+  </a>
 
-<div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl">
+  <div class="logo">
+    <div class="logo-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+    FindMyStuff
+  </div>
 
-    <!-- Back -->
-    <a href="index.html" class="text-sm text-blue-600 font-medium hover:underline">
-        ← Back to Home
-    </a>
+  <h1>Welcome Back</h1>
+  <p class="subtitle">Sign in to your account to continue</p>
 
-    <!-- Header -->
-    <div class="text-center mt-4">
-        <div class="w-16 h-16 mx-auto bg-blue-100 text-blue-600 flex items-center justify-center rounded-full mb-4">
-            <i class="fa-solid fa-user text-2xl"></i>
-        </div>
-        <h2 class="text-2xl font-bold text-[#1e3a8a]">Student Login</h2>
-        <p class="text-sm text-gray-500 mt-1">Login to access your dashboard</p>
+  <div id="alertBox" class="alert" role="status" aria-live="polite"></div>
+
+  <form id="loginForm" novalidate>
+    <div class="form-group">
+      <label class="form-label" for="email">Email Address</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-envelope input-icon"></i>
+        <input class="form-input has-icon" type="email" id="email"
+          placeholder="Enter your email" autocomplete="email" required>
+      </div>
     </div>
 
-    <!-- Form -->
-    <form id="loginForm" class="mt-6 space-y-4">
-
-        <div id="loginStatus" class="hidden rounded-lg border px-4 py-2 text-sm font-medium" role="status" aria-live="polite"></div>
-
-        <!-- Email -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Email</label>
-            <input id="email" type="email" required
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Enter your email">
-        </div>
-
-        <!-- Password -->
-        <div>
-            <label class="text-sm font-medium text-gray-700">Password</label>
-            <div class="relative">
-                <input id="password" type="password" required
-                class="w-full rounded-lg border px-4 py-2 pr-11 focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Enter your password">
-                <button id="togglePassword" type="button" class="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-blue-600" aria-label="Show password">
-                    <i class="fa-solid fa-eye"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Remember + Forgot -->
-        <div class="flex items-center justify-between text-sm">
-            <label class="flex items-center gap-2">
-                <input type="checkbox" class="accent-blue-600">
-                Remember Me
-            </label>
-
-            <a href="forgot-password.html"
-            class="text-blue-600 hover:underline">
-                Forgot Password?
-            </a>
-        </div>
-
-        <!-- Login Button -->
-        <button id="loginBtn" type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
-            Login
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-lock input-icon"></i>
+        <input class="form-input has-icon" type="password" id="password"
+          placeholder="Enter your password" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">
+          <i class="fa-solid fa-eye"></i>
         </button>
-
-    </form>
-
-    <!-- Divider -->
-    <div class="flex items-center my-6">
-        <div class="flex-1 border-b"></div>
-        <span class="px-3 text-gray-400 text-sm">OR</span>
-        <div class="flex-1 border-b"></div>
+      </div>
     </div>
 
-    <div class="space-y-3">
-        <button id="googleLoginBtn" type="button" class="w-full flex items-center justify-center gap-3 border py-2.5 rounded-lg hover:bg-gray-50 transition">
-            <i class="fa-brands fa-google text-red-500 text-lg"></i>
-            Continue with Google
-        </button>
+    <div class="forgot-row">
+      <a href="forgot-password.html" class="forgot-link">Forgot Password?</a>
     </div>
 
-    <!-- Signup -->
-    <p class="text-center text-sm text-gray-500">
-        Don’t have an account?
-        <a href="signup.html" class="text-blue-600 font-medium hover:underline">
-            Sign Up
-        </a>
-    </p>
+    <button type="submit" class="btn btn-primary" id="loginBtn">
+      <i class="fa-solid fa-right-to-bracket"></i>
+      Sign In
+    </button>
+  </form>
 
-    <!-- Admin Link -->
-    <p class="text-center text-xs text-gray-400 mt-4">
-        Admin?
-        <a href="admin-login.html" class="text-blue-600 hover:underline">
-            Login Here
-        </a>
-    </p>
+  <div class="divider">or</div>
 
+  <button class="btn btn-google" id="googleLoginBtn" type="button">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+    Continue with Google
+  </button>
+
+  <p class="footer-text">
+    Don't have an account? <a href="signup.html">Create one</a>
+  </p>
+
+  <a href="admin-login.html" class="admin-link">
+    <i class="fa-solid fa-shield-halved" style="font-size:.7rem;"></i> Admin login
+  </a>
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="js/auth-client.js"></script>
 <script>
-const loginForm = document.getElementById("loginForm");
-const loginStatus = document.getElementById("loginStatus");
-const loginBtn = document.getElementById("loginBtn");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const togglePasswordBtn = document.getElementById("togglePassword");
 const API_BASE = window.LFAuth.API_BASE;
+const alertBox  = document.getElementById('alertBox');
+const loginBtn  = document.getElementById('loginBtn');
+const pwToggle  = document.getElementById('pwToggle');
 
-const prefillEmail = localStorage.getItem("lf_prefill_email");
-if (prefillEmail) {
-    emailInput.value = prefillEmail;
+function showAlert(msg, type) {
+  alertBox.textContent = msg;
+  alertBox.className = 'alert show alert-' + type;
+}
+function clearAlert() {
+  alertBox.className = 'alert';
+  alertBox.textContent = '';
 }
 
-function showStatus(message, type) {
-    loginStatus.textContent = message;
-    loginStatus.className = "rounded-lg border px-4 py-2 text-sm font-medium";
+// Password toggle
+pwToggle.addEventListener('click', function () {
+  const inp = document.getElementById('password');
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  pwToggle.innerHTML = '<i class="fa-solid ' + (isText ? 'fa-eye' : 'fa-eye-slash') + '"></i>';
+});
 
-    if (type === "success") {
-        loginStatus.classList.add("border-green-200", "bg-green-50", "text-green-700");
-        return;
-    }
-
-    if (type === "error") {
-        loginStatus.classList.add("border-red-200", "bg-red-50", "text-red-700");
-        return;
-    }
-
-    loginStatus.classList.add("border-blue-200", "bg-blue-50", "text-blue-700");
+// Pre-fill email if coming from signup
+const prefill = localStorage.getItem('lf_prefill_email');
+if (prefill) {
+  document.getElementById('email').value = prefill;
+  localStorage.removeItem('lf_prefill_email');
 }
 
-loginForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    loginBtn.disabled = true;
-    loginBtn.textContent = "Logging in...";
-    showStatus("Validating credentials...", "info");
+// ── LOGIN FORM ─────────────────────────────────────────
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  clearAlert();
 
-    const payload = {
-        email: document.getElementById("email").value.trim(),
-        password: document.getElementById("password").value
-    };
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
 
-    try {
-        const response = await fetch(API_BASE + "/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+  if (!email) return showAlert('Please enter your email address.', 'error');
+  if (!password) return showAlert('Please enter your password.', 'error');
+
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+
+  try {
+    const res  = await fetch(API_BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      // Blocked user gets a special message
+      if (res.status === 403 && data.isBlocked) {
+        return showAlert('Your account has been blocked by an administrator. Please contact support.', 'error');
+      }
+      throw new Error(data.message || 'Login failed. Please check your credentials.');
+    }
+
+    window.LFAuth.persistAuthSession(data.user, data.token);
+    showAlert('Login successful! Redirecting...', 'success');
+    sessionStorage.setItem('lf_toast', JSON.stringify({
+      type: 'login',
+      title: 'Welcome back! 👋',
+      message: 'You have successfully signed in to FindMyStuff.'
+    }));
+    setTimeout(() => { window.location.href = 'index.html'; }, 700);
+  } catch (err) {
+    showAlert(err.message || 'Could not sign in. Please try again.', 'error');
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+  }
+});
+
+// ── GOOGLE LOGIN ───────────────────────────────────────
+async function handleGoogleCredential(credential) {
+  clearAlert();
+  showAlert('Completing Google sign in...', 'info');
+  try {
+    const res  = await fetch(API_BASE + '/auth/oauth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 403 && data.isBlocked) {
+      return showAlert('Your account has been blocked. Please contact support.', 'error');
+    }
+    if (!res.ok) throw new Error(data.message || 'Google sign in failed');
+
+    window.LFAuth.persistAuthSession(data.user, data.token);
+    sessionStorage.setItem('lf_toast', JSON.stringify({
+      type: 'login', title: 'Welcome back! 👋',
+      message: 'You have signed in via Google.'
+    }));
+    window.location.href = 'index.html';
+  } catch (err) {
+    showAlert(err.message || 'Google sign in failed.', 'error');
+  }
+}
+
+document.getElementById('googleLoginBtn').addEventListener('click', async function () {
+  try {
+    const cfgRes = await fetch(API_BASE + '/auth/oauth/config');
+    const cfg    = await cfgRes.json().catch(() => ({}));
+
+    if (!cfg.googleClientId) {
+      if (cfg.googleSimulationEnabled) {
+        const email = document.getElementById('email').value.trim() ||
+          window.prompt('Dev Mode: Enter Gmail for Google sign-in:');
+        if (!email) return;
+        const res  = await fetch(API_BASE + '/auth/oauth/google/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name: email.split('@')[0] })
         });
-
-        const result = await response.json().catch(function () {
-            return {};
-        });
-
-        if (!response.ok) {
-            throw new Error(result.message || "Login failed");
-        }
-
-        window.LFAuth.persistAuthSession(result.user, result.token);
-
-        showStatus("Login successful. Redirecting...", "success");
-        sessionStorage.setItem("lf_toast", JSON.stringify({
-            type: "login",
-            title: "Welcome back! 👋",
-            message: "You have successfully logged in to FindMyStuff."
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Google sign in failed');
+        window.LFAuth.persistAuthSession(data.user, data.token);
+        sessionStorage.setItem('lf_toast', JSON.stringify({
+          type: 'login', title: 'Welcome back! 👋',
+          message: 'You have signed in via Google.'
         }));
-        setTimeout(function () {
-            window.location.href = "index.html";
-        }, 700);
-    } catch (error) {
-        showStatus(error.message || "Could not login.", "error");
-    } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = "Login";
-    }
-});
-
-togglePasswordBtn.addEventListener("click", function () {
-    const isPassword = passwordInput.type === "password";
-    passwordInput.type = isPassword ? "text" : "password";
-    togglePasswordBtn.innerHTML = '<i class="fa-solid ' + (isPassword ? "fa-eye-slash" : "fa-eye") + '"></i>';
-    togglePasswordBtn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
-});
-
-async function loginWithGoogleCredential(credential) {
-    showStatus("Completing Google login...", "info");
-
-    const response = await fetch(API_BASE + "/auth/oauth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credential })
-    });
-
-    const result = await response.json().catch(function () {
-        return {};
-    });
-
-    if (!response.ok) {
-        throw new Error(result.message || "Google login failed");
-    }
-
-    window.LFAuth.persistAuthSession(result.user, result.token);
-    sessionStorage.setItem("lf_toast", JSON.stringify({
-        type: "login",
-        title: "Welcome back! 👋",
-        message: "You have successfully logged in to FindMyStuff."
-    }));
-    window.location.href = "index.html";
-}
-
-async function loginWithGoogleSimulation() {
-    const seededEmail = emailInput.value.trim();
-    const email = seededEmail || window.prompt("Google OAuth backend client ID missing. Enter email for development Google sign-in:");
-    if (!email) {
+        window.location.href = 'index.html';
         return;
+      }
+      throw new Error('Google OAuth is not configured on this server.');
     }
 
-    const name = email.split("@")[0] || "Google User";
-
-    showStatus("Completing development Google sign-in...", "info");
-    const response = await fetch(API_BASE + "/auth/oauth/google/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            email: email.trim(),
-            name: name.trim()
-        })
+    if (!window.google || !window.google.accounts) {
+      throw new Error('Google Sign-In library failed to load. Please refresh.');
+    }
+    window.google.accounts.id.initialize({
+      client_id: cfg.googleClientId,
+      callback: (resp) => handleGoogleCredential(resp.credential).catch(err => showAlert(err.message, 'error'))
     });
-
-    const result = await response.json().catch(function () {
-        return {};
-    });
-
-    if (!response.ok) {
-        throw new Error(result.message || "Google login failed");
-    }
-
-    window.LFAuth.persistAuthSession(result.user, result.token);
-    sessionStorage.setItem("lf_toast", JSON.stringify({
-        type: "login",
-        title: "Welcome back! 👋",
-        message: "You have successfully logged in to FindMyStuff."
-    }));
-    window.location.href = "index.html";
-}
-
-googleLoginBtn.addEventListener("click", async function () {
-    try {
-        const configResponse = await fetch(API_BASE + "/auth/oauth/config");
-        const config = await configResponse.json().catch(function () {
-            return {};
-        });
-
-        if (!config.googleClientId) {
-            if (config.googleSimulationEnabled) {
-                await loginWithGoogleSimulation();
-                return;
-            }
-            throw new Error("Google OAuth is not configured on the server");
-        }
-
-        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-            throw new Error("Google Identity Services failed to load");
-        }
-
-        window.google.accounts.id.initialize({
-            client_id: config.googleClientId,
-            callback: function (response) {
-                loginWithGoogleCredential(response.credential).catch(function (error) {
-                    showStatus(error.message || "Google login failed", "error");
-                });
-            }
-        });
-        window.google.accounts.id.prompt();
-    } catch (error) {
-        showStatus(error.message || "Google login failed", "error");
-    }
+    window.google.accounts.id.prompt();
+  } catch (err) {
+    showAlert(err.message || 'Google sign in failed.', 'error');
+  }
 });
 
-document.addEventListener("DOMContentLoaded", async function () {
-    const user = await window.LFAuth.bootstrapUserFromToken();
-    if (user && !user.isBlocked) {
-        window.location.href = "index.html";
-    }
+// ── ALREADY LOGGED IN? ─────────────────────────────────
+document.addEventListener('DOMContentLoaded', async function () {
+  const user = await window.LFAuth.bootstrapUserFromToken();
+  if (user && !user.isBlocked) {
+    window.location.href = 'index.html';
+  }
 });
 </script>
 </body>
