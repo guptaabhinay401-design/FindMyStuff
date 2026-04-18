@@ -118,6 +118,7 @@
     outline: none;
   }
   .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+  .form-input.is-invalid { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.12); }
   .form-input.has-icon { padding-left: 2.6rem; }
   .input-icon {
     position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
@@ -129,6 +130,13 @@
     cursor: pointer; font-size: .85rem; padding: .2rem;
   }
   .pw-toggle:hover { color: var(--brand); }
+  .field-error {
+    min-height: 1rem;
+    margin-top: .35rem;
+    font-size: .78rem;
+    color: var(--red);
+    font-weight: 600;
+  }
 
   /* Forgot row */
   .forgot-row {
@@ -228,6 +236,7 @@
         <input class="form-input has-icon" type="email" id="email"
           placeholder="Enter your email" autocomplete="email" required>
       </div>
+      <div id="emailError" class="field-error" aria-live="polite"></div>
     </div>
 
     <div class="form-group">
@@ -240,6 +249,7 @@
           <i class="fa-solid fa-eye"></i>
         </button>
       </div>
+      <div id="passwordError" class="field-error" aria-live="polite"></div>
     </div>
 
     <div class="forgot-row">
@@ -275,6 +285,11 @@ const API_BASE = window.LFAuth.API_BASE;
 const alertBox  = document.getElementById('alertBox');
 const loginBtn  = document.getElementById('loginBtn');
 const pwToggle  = document.getElementById('pwToggle');
+const emailEl = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const emailErrorEl = document.getElementById('emailError');
+const passwordErrorEl = document.getElementById('passwordError');
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function showAlert(msg, type) {
   alertBox.textContent = msg;
@@ -283,6 +298,35 @@ function showAlert(msg, type) {
 function clearAlert() {
   alertBox.className = 'alert';
   alertBox.textContent = '';
+}
+
+function setFieldError(inputEl, errorEl, message) {
+  errorEl.textContent = message || '';
+  inputEl.classList.toggle('is-invalid', Boolean(message));
+}
+
+function validateLoginFields() {
+  const email = emailEl.value.trim();
+  const password = passwordEl.value;
+  let emailError = '';
+  let passwordError = '';
+
+  if (!email) {
+    emailError = 'Enter a valid email address';
+  } else if (!EMAIL_REGEX.test(email)) {
+    emailError = 'Enter a valid email address';
+  }
+
+  if (!password) {
+    passwordError = 'Password is required';
+  } else if (password.length < 6) {
+    passwordError = 'Password must be at least 6 characters';
+  }
+
+  setFieldError(emailEl, emailErrorEl, emailError);
+  setFieldError(passwordEl, passwordErrorEl, passwordError);
+  loginBtn.disabled = Boolean(emailError || passwordError);
+  return !(emailError || passwordError);
 }
 
 // Password toggle
@@ -296,20 +340,21 @@ pwToggle.addEventListener('click', function () {
 // Pre-fill email if coming from signup
 const prefill = localStorage.getItem('lf_prefill_email');
 if (prefill) {
-  document.getElementById('email').value = prefill;
+  emailEl.value = prefill;
   localStorage.removeItem('lf_prefill_email');
 }
+emailEl.addEventListener('input', validateLoginFields);
+passwordEl.addEventListener('input', validateLoginFields);
+validateLoginFields();
 
 // ── LOGIN FORM ─────────────────────────────────────────
 document.getElementById('loginForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   clearAlert();
 
-  const email    = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-
-  if (!email) return showAlert('Please enter your email address.', 'error');
-  if (!password) return showAlert('Please enter your password.', 'error');
+  const email    = emailEl.value.trim();
+  const password = passwordEl.value;
+  if (!validateLoginFields()) return;
 
   loginBtn.disabled = true;
   loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
@@ -343,6 +388,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
   } finally {
     loginBtn.disabled = false;
     loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+    validateLoginFields();
   }
 });
 
@@ -379,25 +425,6 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
     const cfg    = await cfgRes.json().catch(() => ({}));
 
     if (!cfg.googleClientId) {
-      if (cfg.googleSimulationEnabled) {
-        const email = document.getElementById('email').value.trim() ||
-          window.prompt('Dev Mode: Enter Gmail for Google sign-in:');
-        if (!email) return;
-        const res  = await fetch(API_BASE + '/auth/oauth/google/simulate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name: email.split('@')[0] })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || 'Google sign in failed');
-        window.LFAuth.persistAuthSession(data.user, data.token);
-        sessionStorage.setItem('lf_toast', JSON.stringify({
-          type: 'login', title: 'Welcome back! 👋',
-          message: 'You have signed in via Google.'
-        }));
-        window.location.href = 'index.html';
-        return;
-      }
       throw new Error('Google OAuth is not configured on this server.');
     }
 

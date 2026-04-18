@@ -687,25 +687,6 @@ document.getElementById('googleSignupBtn').addEventListener('click', async funct
     const cfg    = await cfgRes.json().catch(() => ({}));
 
     if (!cfg.googleClientId) {
-      if (cfg.googleSimulationEnabled) {
-        const email = document.getElementById('email').value.trim() ||
-          window.prompt('Dev Mode: Enter Gmail for Google sign-in:');
-        if (!email) return;
-        const name = document.getElementById('fullName').value.trim() || email.split('@')[0];
-        const res  = await fetch(API_BASE + '/auth/oauth/google/simulate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || 'Google sign in failed');
-        window.LFAuth.persistAuthSession(data.user, data.token);
-        sessionStorage.setItem('lf_toast', JSON.stringify({
-          type: 'login', title: 'Welcome! 👋', message: 'Signed in via Google.'
-        }));
-        window.location.href = 'index.html';
-        return;
-      }
       throw new Error('Google OAuth is not configured on this server.');
     }
 

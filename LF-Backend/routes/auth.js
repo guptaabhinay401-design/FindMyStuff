@@ -16,6 +16,7 @@ const PRIVATE_PASSWORD_FIELDS = "+password +passwordResetToken +passwordResetExp
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_OTP_ATTEMPTS = 5;
 const OTP_RATE_LIMIT_MS = 60 * 1000; // 1 OTP per minute per email
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ────────────────────────────────────────────
 // UTILITIES
@@ -23,6 +24,10 @@ const OTP_RATE_LIMIT_MS = 60 * 1000; // 1 OTP per minute per email
 
 function normalizeText(value) {
     return String(value || "").trim();
+}
+
+function isValidEmail(email) {
+    return EMAIL_REGEX.test(String(email || "").trim().toLowerCase());
 }
 
 function hashOtp(otp) {
@@ -209,7 +214,7 @@ async function verifyGoogleCredential(credential) {
 router.get("/oauth/config", function (req, res) {
     res.json({
         googleClientId: normalizeText(process.env.GOOGLE_CLIENT_ID),
-        googleSimulationEnabled: !normalizeText(process.env.GOOGLE_CLIENT_ID)
+        googleSimulationEnabled: false
     });
 });
 
@@ -227,8 +232,8 @@ router.post("/send-signup-otp", async (req, res) => {
         if (password.length < 6) {
             return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return res.status(400).json({ message: "Invalid email format" });
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: "Enter a valid email address" });
         }
 
         // Check duplicate
@@ -273,6 +278,12 @@ router.post("/verify-signup", async (req, res) => {
         if (!email || !name || !password || !otp) {
             return res.status(400).json({ message: "All fields including OTP are required" });
         }
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: "Enter a valid email address" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
 
         // Double-check duplicate (race condition guard)
         const existing = await User.findOne({ email }).select("_id").lean();
@@ -302,27 +313,36 @@ router.post("/login", async (req, res) => {
         const email = normalizeText(req.body.email).toLowerCase();
         const password = String(req.body.password || "");
 
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: "Enter a valid email address" });
+        }
+        if (!password) {
+            return res.status(400).json({ message: "Password is required" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
 
         const user = await User.findOne({ email })
             .select(PUBLIC_USER_FIELDS + " " + PRIVATE_PASSWORD_FIELDS + " isBlocked blockedAt")
             .lean();
 
-        if (!user || !user.password) {
-            return res.status(400).json({ message: "Invalid email or password" });
+        if (!user) {
+            return res.status(404).json({ message: "User not found. Please sign up." });
         }
 
         if (user.oauthProvider === "google") {
             return res.status(400).json({
-                message: "This account uses Google Sign In. Please use the Google button to log in."
+                message: "This account uses Google Sign In. Please use Google login."
             });
+        }
+        if (!user.password) {
+            return res.status(400).json({ message: "Password is required" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid email or password" });
+            return res.status(401).json({ message: "Incorrect password" });
         }
 
         if (user.isBlocked) {
@@ -344,6 +364,9 @@ router.post("/send-reset-otp", async (req, res) => {
     try {
         const email = normalizeText(req.body.email).toLowerCase();
         if (!email) return res.status(400).json({ message: "Email is required" });
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: "Enter a valid email address" });
+        }
 
         const user = await User.findOne({ email }).select("_id oauthProvider").lean();
         if (!user) {
@@ -380,6 +403,9 @@ router.post("/reset-password-otp", async (req, res) => {
 
         if (!email || !otp || !newPassword) {
             return res.status(400).json({ message: "Email, OTP, and new password are required" });
+        }
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: "Enter a valid email address" });
         }
         if (newPassword.length < 6) {
             return res.status(400).json({ message: "Password must be at least 6 characters" });
@@ -430,13 +456,9 @@ router.post("/oauth/google", async (req, res) => {
                 isVerified: true
             });
         } else if (!user.oauthProvider) {
-            // Existing email-password user linking to Google
-            user.oauthProvider = "google";
-            user.isVerified = true;
-            if (!user.profileImage && googleUser.picture) {
-                user.profileImage = normalizeText(googleUser.picture);
-            }
-            await user.save();
+            return res.status(400).json({ message: "Use password to login" });
+        } else if (user.oauthProvider !== "google") {
+            return res.status(400).json({ message: "Unsupported OAuth provider for this account" });
         }
 
         res.json(createAuthResponse(user, "Google login successful"));
@@ -447,34 +469,9 @@ router.post("/oauth/google", async (req, res) => {
 
 // POST /api/auth/oauth/google/simulate (dev only)
 router.post("/oauth/google/simulate", async (req, res) => {
-    try {
-        const email = normalizeText(req.body.email).toLowerCase();
-        const name = normalizeText(req.body.name) || "Google User";
-        if (!email) return res.status(400).json({ message: "Email is required" });
-
-        let user = await User.findOne({ email }).select(PUBLIC_USER_FIELDS + " isBlocked blockedAt");
-
-        if (user && user.isBlocked) {
-            return res.status(403).json({
-                message: "Your account has been blocked.",
-                isBlocked: true
-            });
-        }
-
-        if (!user) {
-            user = await User.create({
-                name, email,
-                password: await bcrypt.hash(buildRandomPassword(), 10),
-                oauthProvider: "google",
-                oauthSubject: normalizeText(req.body.subject) || crypto.randomUUID(),
-                isVerified: true
-            });
-        }
-
-        res.json(createAuthResponse(user, "Google sign-in successful"));
-    } catch (error) {
-        res.status(500).json({ message: "Google sign-in failed" });
-    }
+    return res.status(403).json({
+        message: "Google simulation login is disabled. Use verified Google OAuth token."
+    });
 });
 
 // ── PROTECTED ROUTES ──────────────────────────────────
