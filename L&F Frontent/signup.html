@@ -123,6 +123,14 @@
   .alert-error { background: #fef2f2; border-color: #fecaca; color: var(--red); }
   .alert-success { background: #f0fdf4; border-color: #bbf7d0; color: var(--green); }
   .alert-info { background: #eff6ff; border-color: #bfdbfe; color: var(--brand); }
+  .alert-soft {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
 
   /* Form */
   .form-group { margin-bottom: 1rem; }
@@ -412,6 +420,10 @@ function showAlert(msg, type) {
   alertBox.textContent = msg;
   alertBox.className = 'alert show alert-' + type;
 }
+function showSoftInfo(msg) {
+  alertBox.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>' + msg + '</span>';
+  alertBox.className = 'alert show alert-soft';
+}
 function clearAlert() {
   alertBox.className = 'alert';
   alertBox.textContent = '';
@@ -687,7 +699,8 @@ document.getElementById('googleSignupBtn').addEventListener('click', async funct
     const cfg    = await cfgRes.json().catch(() => ({}));
 
     if (!cfg.googleClientId) {
-      throw new Error('Google OAuth is not configured on this server.');
+      showSoftInfo('Google sign-in temporarily unavailable.');
+      return;
     }
 
     if (!window.google || !window.google.accounts) {
