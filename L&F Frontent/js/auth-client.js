@@ -62,20 +62,24 @@
 
     const profileImage = user && typeof user.profileImage === "string" ? user.profileImage.trim() : "";
     const stored = user ? Object.assign({}, user) : null;
-    if (stored && profileImage && profileImage.startsWith("data:")) stored.profileImage = "";
 
+    // Keep base64 images in the user object (needed for avatar display)
+    // Only clear the separate shortcut keys for base64 (they're too large)
     if (stored) {
       localStorage.setItem(USER_KEY, JSON.stringify(stored));
       localStorage.setItem(USER_TS_KEY, String(Date.now()));
     }
 
     if (profileImage && !profileImage.startsWith("data:")) {
+      // URL-based image: store in shortcut keys for quick access
       ["lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar"]
         .forEach(function (k) { localStorage.setItem(k, profileImage); });
-    } else {
+    } else if (!profileImage) {
+      // No image at all: clear shortcut keys
       ["lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar"]
         .forEach(function (k) { localStorage.removeItem(k); });
     }
+    // base64 case: shortcut keys left as-is; real data lives in lf_auth_user
   }
 
   function authorizedFetch(path, options) {
@@ -149,6 +153,25 @@
     _fetchFromServer().catch(function () {});
   }
 
+  // ── getProfilePhoto helper ───────────────────────────────────────────────
+  // Reads profile photo from localStorage in priority order:
+  // 1. lf_profile_photo (URL-based shortcut)
+  // 2. lf_auth_user.profileImage (could be URL or base64)
+  function getProfilePhoto() {
+    const directKeys = ["lf_profile_photo","lf_profile_image","lf_user_dp","lf_user_avatar"];
+    for (let i = 0; i < directKeys.length; i++) {
+      const v = (localStorage.getItem(directKeys[i]) || "").trim();
+      if (v) return v;
+    }
+    const u = getStoredUser();
+    if (!u) return "";
+    const candidates = [u.profileImage, u.image, u.photo, u.avatar, u.dp];
+    for (let j = 0; j < candidates.length; j++) {
+      if (typeof candidates[j] === "string" && candidates[j].trim()) return candidates[j].trim();
+    }
+    return "";
+  }
+
   // Expose
   window.LFAuth = {
     API_BASE            : API_BASE,
@@ -160,6 +183,7 @@
     clearApiBase        : function () { localStorage.removeItem("lf_api_base"); },
     getToken            : getToken,
     getStoredUser       : getStoredUser,
+    getProfilePhoto     : getProfilePhoto,
     persistAuthSession  : persistAuthSession,
     clearAuthSession    : clearAuthSession,
     authorizedFetch     : authorizedFetch,

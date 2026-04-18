@@ -504,21 +504,25 @@
     .card-view-btn {
       display: inline-flex;
       align-items: center;
-      gap: .3rem;
-      margin-top: .6rem;
+      gap: .4rem;
+      margin-top: .65rem;
       font-size: .78rem;
       font-weight: 700;
-      color: var(--brand);
-      background: var(--brand-light);
-      border: 1px solid var(--brand-mid);
-      border-radius: 8px;
-      padding: .32rem .75rem;
+      color: #fff;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border: none;
+      border-radius: 9px;
+      padding: .38rem .85rem;
       cursor: pointer;
       font-family: inherit;
       align-self: flex-start;
-      transition: background var(--transition);
+      transition: transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 2px 8px rgba(37,99,235,.35);
     }
-    .card-view-btn:hover { background: #dbeafe; }
+    .card-view-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 14px rgba(37,99,235,.45);
+    }
 
     /* ── State / error cards ── */
     .state-card {
@@ -651,6 +655,38 @@
     }
     .modal-close:hover { background:var(--brand-light);color:var(--brand);border-color:var(--brand-mid); }
 
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem;
+      margin: 0 0 2rem;
+    }
+    .stat-item {
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .stat-item:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .stat-icon.blue  { background: var(--brand-light);   color: var(--brand); }
+    .stat-icon.green { background: var(--success-light);  color: var(--success); }
+    .stat-icon.amber { background: #fffbeb; color: #d97706; }
+    .stat-body strong { display: block; font-size: 1.35rem; font-weight: 800; color: var(--ink); line-height: 1; }
+    .stat-body span   { font-size: .75rem; color: var(--muted); font-weight: 500; }
+    @media(max-width:540px) { .stats-bar { grid-template-columns: 1fr; } }
+    @media(min-width:541px) and (max-width:767px) { .stats-bar { grid-template-columns: repeat(3,1fr); } }
+
     /* ── Responsive ── */
     @media(min-width:560px) {
       .grid-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -755,6 +791,31 @@
 
     <section class="recent">
       <div class="container">
+        <!-- Stats bar -->
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-item">
+            <div class="stat-icon blue"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="stat-body">
+              <strong id="statLost">—</strong>
+              <span>Items Reported Lost</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon green"><i class="fa-solid fa-box-open"></i></div>
+            <div class="stat-body">
+              <strong id="statFound">—</strong>
+              <span>Items Reported Found</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon amber"><i class="fa-solid fa-handshake"></i></div>
+            <div class="stat-body">
+              <strong id="statClaimed">—</strong>
+              <span>Successful Reunions</span>
+            </div>
+          </div>
+        </div>
+
         <div class="section-head">
           <div class="section-title-group">
             <h2>Recent Lost Items</h2>
@@ -853,32 +914,22 @@
       }
 
       function getProfilePhoto() {
+        // Prefer LFAuth helper (single source of truth, reads base64 too)
+        if (window.LFAuth && typeof window.LFAuth.getProfilePhoto === 'function') {
+          return window.LFAuth.getProfilePhoto();
+        }
+        // Fallback: manual scan
         var directKeys = ["lf_profile_photo", "lf_profile_image", "lf_user_dp", "lf_user_avatar"];
-
-        for (var i = 0; i < directKeys.length; i += 1) {
-          var fromDirect = localStorage.getItem(directKeys[i]);
-          if (fromDirect && String(fromDirect).trim()) {
-            return String(fromDirect).trim();
-          }
+        for (var i = 0; i < directKeys.length; i++) {
+          var v = (localStorage.getItem(directKeys[i]) || '').trim();
+          if (v) return v;
         }
-
         var user = getStoredUser();
-        var candidates = [
-          user.profileImage,
-          user.image,
-          user.photo,
-          user.avatar,
-          user.dp
-        ];
-
-        for (var j = 0; j < candidates.length; j += 1) {
-          var value = candidates[j];
-          if (typeof value === "string" && value.trim()) {
-            return value.trim();
-          }
+        var candidates = [user.profileImage, user.image, user.photo, user.avatar, user.dp];
+        for (var j = 0; j < candidates.length; j++) {
+          if (typeof candidates[j] === 'string' && candidates[j].trim()) return candidates[j].trim();
         }
-
-        return "";
+        return '';
       }
 
       function applyProfileAvatar() {
@@ -903,47 +954,26 @@
       }
 
       function persistFetchedUser(user) {
-        if (!user || typeof user !== "object") {
-          return;
-        }
-
-        var storedUser = Object.assign({}, user);
-        var profileImage = typeof user.profileImage === "string" ? user.profileImage.trim() : "";
-        if (profileImage.startsWith("data:")) {
-          storedUser.profileImage = "";
-        }
-
-        localStorage.setItem("lf_auth_user", JSON.stringify(storedUser));
-
-        if (profileImage && !profileImage.startsWith("data:")) {
-          localStorage.setItem("lf_profile_photo", profileImage);
-          localStorage.setItem("lf_profile_image", profileImage);
-          localStorage.setItem("lf_user_dp", profileImage);
-          localStorage.setItem("lf_user_avatar", profileImage);
+        if (!user || typeof user !== "object") return;
+        // Delegate to auth-client's persistAuthSession for consistent behavior
+        if (window.LFAuth && typeof window.LFAuth.persistAuthSession === 'function') {
+          window.LFAuth.persistAuthSession(user, null);
+        } else {
+          localStorage.setItem('lf_auth_user', JSON.stringify(user));
         }
       }
 
       async function syncCurrentUser() {
-        if (!isLoggedIn()) {
-          return;
-        }
-
+        if (!isLoggedIn()) return;
         try {
           var response = await fetch(window.LFAuth.API_BASE + "/auth/me", {
-            headers: {
-              Authorization: "Bearer " + localStorage.getItem("lf_auth_token")
-            }
+            headers: { Authorization: "Bearer " + localStorage.getItem("lf_auth_token") }
           });
-          var result = await response.json().catch(function () {
-            return {};
-          });
-
-          if (!response.ok || !result.user) {
-            return;
-          }
-
+          var result = await response.json().catch(function () { return {}; });
+          if (!response.ok || !result.user) return;
           persistFetchedUser(result.user);
           applyProfileAvatar();
+          applyAuthNavState(); // also refresh user name
         } catch (error) {
           console.error("Failed to sync current user:", error);
         }
@@ -1232,6 +1262,7 @@
         applyBlockedState();
         syncCurrentUser();
         loadRecentItems();
+        loadStats();
         setInterval(loadRecentItems, 30000);
         loadAnnouncementsBanner();
 
@@ -1239,6 +1270,23 @@
           setTimeout(openSignupModal, 250);
         }
       });
+
+      /* ── Stats bar loader ── */
+      async function loadStats() {
+        var apiBase = (window.LFAuth && window.LFAuth.API_BASE) || 'https://findmystuff-backend-d16m.onrender.com/api';
+        try {
+          var res = await fetch(apiBase + '/items/stats');
+          if (!res.ok) return;
+          var data = await res.json();
+          var lostEl    = document.getElementById('statLost');
+          var foundEl   = document.getElementById('statFound');
+          var claimedEl = document.getElementById('statClaimed');
+          function fmt(n) { return typeof n === 'number' ? (n >= 1000 ? (n/1000).toFixed(1)+'k' : n) : '—'; }
+          if (lostEl    && data.totalLost    != null) lostEl.textContent    = fmt(data.totalLost);
+          if (foundEl   && data.totalFound   != null) foundEl.textContent   = fmt(data.totalFound);
+          if (claimedEl && data.totalClaimed != null) claimedEl.textContent = fmt(data.totalClaimed);
+        } catch(e) { /* stats are non-critical, silently fail */ }
+      }
 
       /* ── Announcements Banner ── */
       async function loadAnnouncementsBanner() {
