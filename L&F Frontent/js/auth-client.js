@@ -66,8 +66,21 @@
     // Keep base64 images in the user object (needed for avatar display)
     // Only clear the separate shortcut keys for base64 (they're too large)
     if (stored) {
-      localStorage.setItem(USER_KEY, JSON.stringify(stored));
-      localStorage.setItem(USER_TS_KEY, String(Date.now()));
+      try {
+        localStorage.setItem(USER_KEY, JSON.stringify(stored));
+        localStorage.setItem(USER_TS_KEY, String(Date.now()));
+      } catch (err) {
+        console.warn("Storage quota exceeded. Trying to save without profile image.");
+        if (stored.profileImage) {
+          stored.profileImage = "";
+          try {
+            localStorage.setItem(USER_KEY, JSON.stringify(stored));
+            localStorage.setItem(USER_TS_KEY, String(Date.now()));
+          } catch (e) {
+            console.error("Failed to save session:", e);
+          }
+        }
+      }
     }
 
     if (profileImage && !profileImage.startsWith("data:")) {
@@ -131,8 +144,10 @@
         const s = getStoredUser() || {};
         s.isBlocked = true;
         s.blockedAt = result.blockedAt || s.blockedAt || null;
-        localStorage.setItem(USER_KEY, JSON.stringify(s));
-        localStorage.setItem(USER_TS_KEY, String(Date.now()));
+        try {
+          localStorage.setItem(USER_KEY, JSON.stringify(s));
+          localStorage.setItem(USER_TS_KEY, String(Date.now()));
+        } catch (e) {}
         return s;
       }
 

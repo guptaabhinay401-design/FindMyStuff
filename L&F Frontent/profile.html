@@ -1281,7 +1281,14 @@ document.getElementById('editPhotoInput').addEventListener('change', async funct
   if (!file) return;
   try {
     setStatus('editStatus', 'Optimizing image...', 'info');
-    _editPhoto = await window.LFImageUtils.compressImageFile(file, { maxWidth: 720, maxHeight: 720, quality: 0.84, minCompressSizeBytes: 120*1024 });
+    // Ensure aggressive compression for profile pictures (DPs) to save storage space
+    _editPhoto = await window.LFImageUtils.compressImageFile(file, {
+      maxWidth: 400,
+      maxHeight: 400,
+      quality: 0.7,
+      minCompressSizeBytes: 0,
+      outputType: "image/jpeg"
+    });
     renderAvatarEl(document.getElementById('editAvatarPreview'), _editPhoto);
     document.getElementById('editStatus').className = 'form-status';
   } catch(e) {

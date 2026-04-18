@@ -476,6 +476,17 @@ textarea.inp{resize:vertical;min-height:80px;}
               <option value="urgent">🚨 Urgent</option>
             </select>
           </div>
+          <!-- Email blast toggle (separate option) -->
+          <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <p style="font-size:13px;font-weight:700;color:#15803d;margin:0;">📧 Also Send via Email</p>
+              <p style="font-size:11.5px;color:#4ade80;margin:3px 0 0;">Sabhi registered students ko email bhi bhejo</p>
+            </div>
+            <label class="tog" title="Send email to all users">
+              <input type="checkbox" id="annSendEmail">
+              <span class="tog-slider" style="background:#86efac;"></span>
+            </label>
+          </div>
           <button class="btn b-primary" onclick="sendAnnouncement()" style="justify-content:center;">
             <svg style="width:15px;height:15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             Send Announcement
@@ -1112,13 +1123,15 @@ async function sendAnnouncement(){
   const title=document.getElementById('annTitle').value.trim();
   const message=document.getElementById('annMessage').value.trim();
   const priority=document.getElementById('annPriority').value;
+  const sendEmail=document.getElementById('annSendEmail').checked;
   if(!title||!message){toast('Title and message are required','warning');return;}
   try{
-    await api('/settings/announcements',{method:'POST',body:JSON.stringify({title,message,priority,sentBy:getCurrentUser()?.name||'Admin'})});
+    const result=await api('/settings/announcements',{method:'POST',body:JSON.stringify({title,message,priority,sentBy:getCurrentUser()?.name||'Admin',sendEmail})});
     document.getElementById('annTitle').value='';
     document.getElementById('annMessage').value='';
+    document.getElementById('annSendEmail').checked=false;
     await renderAnnouncements();
-    toast('Announcement sent to ALL users!','success');
+    toast(sendEmail ? '📧 Announcement sent + Email blast queued!' : 'Announcement sent to ALL users!','success');
   }catch(e){toast(e.message,'error');}
 }
 
@@ -1132,12 +1145,15 @@ async function renderAnnouncements(){
     log.innerHTML=list.map(a=>`
       <div class="ann-card ann-${a.priority}" style="position:relative;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-          <div>
-            <p style="font-size:13.5px;font-weight:700;color:#0f172a;">${a.title}</p>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;">
+              <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0;">${a.title}</p>
+              ${a.emailSent?'<span style="font-size:10.5px;font-weight:700;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;">&#128231; Email Sent</span>':''}
+            </div>
             <p style="font-size:12.5px;color:#475569;margin-top:3px;">${a.message}</p>
             <p style="font-size:11px;color:#94a3b8;margin-top:6px;">By ${a.sentBy} · ${fmt(a.createdAt)}</p>
           </div>
-          <button onclick="deleteAnn('${a._id}')" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+          <button onclick="deleteAnn('${a._id}')" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:14px;flex-shrink:0;">&#10005;</button>
         </div>
       </div>`).join('');
   }catch(e){log.innerHTML='<p style="font-size:13px;color:#dc2626;text-align:center;padding:24px;">'+e.message+'</p>';}

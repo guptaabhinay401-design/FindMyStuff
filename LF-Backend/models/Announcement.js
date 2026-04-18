@@ -32,6 +32,12 @@ const AnnouncementSchema = new mongoose.Schema({
     default: true
   },
 
+  // true = email was blasted to all users
+  emailSent: {
+    type: Boolean,
+    default: false
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
