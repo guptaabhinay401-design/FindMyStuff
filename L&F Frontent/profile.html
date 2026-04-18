@@ -158,6 +158,8 @@ img { display: block; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
+  display: block;
 }
 .avatar-online-dot {
   position: absolute;
@@ -560,7 +562,13 @@ img { display: block; }
   flex-shrink: 0;
   border: 3px solid var(--border);
 }
-.modal-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.modal-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
 .modal-avatar-actions { display: flex; flex-direction: column; gap: .5rem; }
 .btn-upload-photo {
   display: inline-flex;
